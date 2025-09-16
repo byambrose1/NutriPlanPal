@@ -98,9 +98,9 @@ export default function Shopping() {
 
   // Mock data for demonstration
   const mockShoppingStats = {
-    totalItems: activeShoppingList?.items?.length || 0,
+    totalItems: (activeShoppingList as any)?.items?.length || 0,
     completedItems: 0,
-    estimatedTotal: activeShoppingList?.totalEstimatedCost || "0",
+    estimatedTotal: (activeShoppingList as any)?.totalEstimatedCost || "0",
     potentialSavings: "23.50"
   };
 
@@ -241,7 +241,7 @@ export default function Shopping() {
                   </div>
                 ) : activeShoppingList ? (
                   <ShoppingList 
-                    shoppingList={activeShoppingList}
+                    shoppingList={activeShoppingList as any}
                     onItemsSelected={setSelectedItems}
                   />
                 ) : (
@@ -259,7 +259,7 @@ export default function Shopping() {
               </CardContent>
             </Card>
 
-            {activeShoppingList && (
+            {activeShoppingList ? (
               <div className="flex gap-4">
                 <Button
                   onClick={handleCompareSelected}
@@ -273,7 +273,7 @@ export default function Shopping() {
                   Export List
                 </Button>
               </div>
-            )}
+            ) : null}
           </TabsContent>
 
           {/* Price Comparison Tab */}
