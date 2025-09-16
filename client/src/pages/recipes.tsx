@@ -24,7 +24,7 @@ export default function Recipes() {
   const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
 
   // Fetch recipes
-  const { data: recipes = [], isLoading } = useQuery({
+  const { data: recipes = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['/api/recipes', searchQuery, selectedTags.join(',')],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -81,6 +81,62 @@ export default function Recipes() {
       childrenAges: [8, 12]
     });
   };
+
+  // Add to meal plan mutation
+  const addToMealPlanMutation = useMutation({
+    mutationFn: async (recipeId: string) => {
+      const response = await fetch(`/api/users/user-1/meal-plans/active/add-recipe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipeId })
+      });
+      if (!response.ok) throw new Error('Failed to add recipe to meal plan');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', 'user-1', 'meal-plans', 'active'] });
+      toast({
+        title: "Added to Meal Plan!",
+        description: "Recipe has been added to your meal plan.",
+      });
+      setSelectedRecipe(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add recipe to meal plan. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Add to shopping list mutation
+  const addToShoppingListMutation = useMutation({
+    mutationFn: async (recipeId: string) => {
+      const response = await fetch(`/api/users/user-1/shopping-lists/active/add-recipe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipeId })
+      });
+      if (!response.ok) throw new Error('Failed to add recipe to shopping list');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', 'user-1', 'shopping-lists', 'active'] });
+      toast({
+        title: "Added to Shopping List!",
+        description: "Recipe ingredients have been added to your shopping list.",
+      });
+      setSelectedRecipe(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add recipe to shopping list. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
 
   const filteredRecipes = recipes.filter((recipe: any) => {
     if (difficultyFilter && difficultyFilter !== "all" && recipe.difficulty !== difficultyFilter) return false;
@@ -268,15 +324,15 @@ export default function Recipes() {
             )}
 
             {/* Active Filters */}
-            {(selectedTags.length > 0 || difficultyFilter || timeFilter) && (
+            {(selectedTags.length > 0 || (difficultyFilter && difficultyFilter !== "all") || (timeFilter && timeFilter !== "all")) && (
               <div className="mt-4 pt-4 border-t">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Filter className="h-4 w-4" />
                   <span>Active filters:</span>
-                  {difficultyFilter && (
+                  {difficultyFilter && difficultyFilter !== "all" && (
                     <Badge variant="secondary">{difficultyFilter}</Badge>
                   )}
-                  {timeFilter && (
+                  {timeFilter && timeFilter !== "all" && (
                     <Badge variant="secondary">{timeFilter}</Badge>
                   )}
                   {selectedTags.map((tag: string) => (
@@ -328,7 +384,20 @@ export default function Recipes() {
         </div>
 
         {/* Recipe Grid */}
-        {isLoading ? (
+        {isError ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <div className="text-destructive text-4xl mb-4">⚠️</div>
+              <h3 className="text-lg font-semibold mb-2">Failed to load recipes</h3>
+              <p className="text-muted-foreground mb-4">
+                Something went wrong while fetching recipes. Please try again.
+              </p>
+              <Button onClick={() => refetch()} data-testid="button-retry-recipes">
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        ) : isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -488,6 +557,36 @@ export default function Recipes() {
                     </div>
                   </>
                 )}
+
+                {/* Action Buttons */}
+                <Separator />
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={() => addToMealPlanMutation.mutate(selectedRecipe.id)}
+                    disabled={addToMealPlanMutation.isPending}
+                    className="flex-1"
+                    data-testid="button-add-to-meal-plan"
+                  >
+                    {addToMealPlanMutation.isPending ? (
+                      "Adding..."
+                    ) : (
+                      "Add to Meal Plan"
+                    )}
+                  </Button>
+                  <Button 
+                    onClick={() => addToShoppingListMutation.mutate(selectedRecipe.id)}
+                    disabled={addToShoppingListMutation.isPending}
+                    variant="outline"
+                    className="flex-1"
+                    data-testid="button-add-to-shopping-list"
+                  >
+                    {addToShoppingListMutation.isPending ? (
+                      "Adding..."
+                    ) : (
+                      "Add to Shopping List"
+                    )}
+                  </Button>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
