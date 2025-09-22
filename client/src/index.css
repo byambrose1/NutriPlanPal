@@ -139,3 +139,44 @@
   border-radius: 4px;
   background: linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
 }
+
+/* Marketing Psychology Animations & Colors */
+@keyframes gradient-x {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 3s ease infinite;
+}
+
+/* Exciting, appetizing color palette for conversion */
+.landing-orange {
+  background-color: hsl(16, 100%, 60%);
+}
+
+.landing-yellow {
+  background-color: hsl(52, 100%, 70%);
+}
+
+.landing-emerald {
+  background-color: hsl(174, 64%, 60%);
+}
+
+/* High-conversion button styles */
+.cta-button {
+  background: linear-gradient(135deg, hsl(16, 100%, 60%) 0%, hsl(52, 100%, 70%) 100%);
+  box-shadow: 0 10px 25px rgba(255, 136, 77, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cta-button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(255, 136, 77, 0.4);
+}
