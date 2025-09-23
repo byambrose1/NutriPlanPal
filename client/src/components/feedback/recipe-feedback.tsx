@@ -9,7 +9,7 @@ interface RecipeFeedbackProps {
   className?: string;
 }
 
-export function RecipeFeedback({
+export function RecipeFeedbackForm({
   recipe,
   userId,
   onClose,

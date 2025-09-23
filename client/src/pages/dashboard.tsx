@@ -9,7 +9,7 @@ import { RecipeCard } from "@/components/recipe-card";
 import { MealPlanGrid } from "@/components/meal-plan-grid";
 import { NutritionOverview } from "@/components/nutrition-overview";
 import { FeedbackDisplay } from "@/components/feedback/feedback-display";
-import { MealPlanFeedback } from "@/components/feedback/meal-plan-feedback";
+import { MealPlanFeedbackForm } from "@/components/feedback/meal-plan-feedback";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Plus, List, PieChart, Baby, Sparkles, Route, ChevronLeft, ChevronRight, DollarSign, Calendar, Clock, Heart, MessageSquare } from "lucide-react";
@@ -285,7 +285,7 @@ export default function Dashboard() {
             <MealPlanGrid mealPlan={activeMealPlan} isLoading={mealPlanLoading} />
             
             {/* Meal Plan Feedback Section */}
-            {activeMealPlan && !mealPlanLoading && typeof activeMealPlan === 'object' && 'id' in activeMealPlan && (
+            {activeMealPlan && !mealPlanLoading && (
               <>
                 <Separator className="my-6" />
                 <div className="space-y-4">
@@ -305,7 +305,7 @@ export default function Dashboard() {
                   </div>
 
                   {showMealPlanFeedback ? (
-                    <MealPlanFeedback
+                    <MealPlanFeedbackForm
                       mealPlan={activeMealPlan as any}
                       userId={currentUserId}
                       onClose={() => setShowMealPlanFeedback(false)}

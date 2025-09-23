@@ -9,7 +9,7 @@ interface MealPlanFeedbackProps {
   className?: string;
 }
 
-export function MealPlanFeedback({
+export function MealPlanFeedbackForm({
   mealPlan,
   userId,
   onClose,

@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/ui/star-rating";
 import { FeedbackDisplay } from "@/components/feedback/feedback-display";
-import { RecipeFeedback } from "@/components/feedback/recipe-feedback";
+import { RecipeFeedbackForm } from "@/components/feedback/recipe-feedback";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Search, Filter, Plus, Sparkles, Clock, Users, Utensils, MessageSquare, Star as StarIcon } from "lucide-react";
@@ -616,7 +616,7 @@ export default function Recipes() {
                   </div>
 
                   {showFeedbackForm ? (
-                    <RecipeFeedback
+                    <RecipeFeedbackForm
                       recipe={selectedRecipe}
                       userId={currentUserId}
                       onClose={() => setShowFeedbackForm(false)}
