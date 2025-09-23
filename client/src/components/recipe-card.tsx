@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, DollarSign, Star } from "lucide-react";
+import { StarRating } from "@/components/ui/star-rating";
+import { Clock, Users, DollarSign } from "lucide-react";
 
 interface Recipe {
   id: string;
@@ -54,12 +55,13 @@ export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
           <h4 className="font-semibold text-foreground" data-testid={`recipe-title-${recipe.id}`}>
             {recipe.title}
           </h4>
-          <div className="flex items-center text-yellow-500">
-            <Star className="h-4 w-4 fill-current" />
-            <span className="text-sm ml-1" data-testid={`recipe-rating-${recipe.id}`}>
-              {recipe.rating}
-            </span>
-          </div>
+          <StarRating 
+            value={parseFloat(recipe.rating)} 
+            readonly 
+            size="sm" 
+            showValue 
+            data-testid={`recipe-rating-${recipe.id}`}
+          />
         </div>
         
         <p className="text-sm text-muted-foreground mb-3" data-testid={`recipe-description-${recipe.id}`}>

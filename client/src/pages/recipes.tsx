@@ -10,18 +10,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { StarRating } from "@/components/ui/star-rating";
+import { FeedbackDisplay } from "@/components/feedback/feedback-display";
+import { RecipeFeedback } from "@/components/feedback/recipe-feedback";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { Search, Filter, Plus, Sparkles, Clock, Users, Utensils, Star } from "lucide-react";
+import { Search, Filter, Plus, Sparkles, Clock, Users, Utensils, MessageSquare, Star as StarIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 export default function Recipes() {
+  // Mock user data - in production this would come from authentication
+  const currentUserId = "user-1";
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [difficultyFilter, setDifficultyFilter] = useState<string>("");
   const [timeFilter, setTimeFilter] = useState<string>("");
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<any>(null);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
 
   // Fetch recipes
   const { data: recipes = [], isLoading, isError, refetch } = useQuery({
@@ -444,11 +451,13 @@ export default function Recipes() {
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center justify-between">
-                  {selectedRecipe.title}
-                  <div className="flex items-center text-yellow-500">
-                    <Star className="h-4 w-4 fill-current" />
-                    <span className="text-sm ml-1">{selectedRecipe.rating}</span>
-                  </div>
+                  <span className="flex-1 pr-4">{selectedRecipe.title}</span>
+                  <StarRating 
+                    value={parseFloat(selectedRecipe.rating)} 
+                    readonly 
+                    size="sm" 
+                    showValue
+                  />
                 </DialogTitle>
               </DialogHeader>
               
@@ -586,6 +595,39 @@ export default function Recipes() {
                       "Add to Shopping List"
                     )}
                   </Button>
+                </div>
+
+                {/* Feedback Section */}
+                <Separator />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Recipe Feedback
+                    </h4>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowFeedbackForm(!showFeedbackForm)}
+                      data-testid="button-rate-recipe"
+                    >
+                      {showFeedbackForm ? "Cancel" : "Rate Recipe"}
+                    </Button>
+                  </div>
+
+                  {showFeedbackForm ? (
+                    <RecipeFeedback
+                      recipe={selectedRecipe}
+                      userId={currentUserId}
+                      onClose={() => setShowFeedbackForm(false)}
+                    />
+                  ) : (
+                    <FeedbackDisplay
+                      itemId={selectedRecipe.id}
+                      itemType="recipe"
+                      currentRating={selectedRecipe.rating}
+                    />
+                  )}
                 </div>
               </div>
             </DialogContent>
