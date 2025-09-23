@@ -14,6 +14,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Plus, List, PieChart, Baby, Sparkles, Route, ChevronLeft, ChevronRight, DollarSign, Calendar, Clock, Heart, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { MealPlan, ShoppingList, Recipe } from "@shared/schema";
 
 export default function Dashboard() {
   // Mock user data - in production this would come from authentication
@@ -21,19 +22,19 @@ export default function Dashboard() {
   const [showMealPlanFeedback, setShowMealPlanFeedback] = useState(false);
 
   // Fetch active meal plan
-  const { data: activeMealPlan, isLoading: mealPlanLoading } = useQuery({
+  const { data: activeMealPlan, isLoading: mealPlanLoading } = useQuery<MealPlan | null>({
     queryKey: ['/api/users', currentUserId, 'meal-plans', 'active'],
     enabled: !!currentUserId
   });
 
   // Fetch active shopping list
-  const { data: activeShoppingList } = useQuery({
+  const { data: activeShoppingList } = useQuery<ShoppingList | null>({
     queryKey: ['/api/users', currentUserId, 'shopping-lists', 'active'],
     enabled: !!currentUserId
   });
 
   // Fetch recommended recipes
-  const { data: recipes = [] } = useQuery({
+  const { data: recipes = [] } = useQuery<Recipe[]>({
     queryKey: ['/api/recipes'],
   });
 
@@ -306,13 +307,13 @@ export default function Dashboard() {
 
                   {showMealPlanFeedback ? (
                     <MealPlanFeedbackForm
-                      mealPlan={activeMealPlan as any}
+                      mealPlan={activeMealPlan}
                       userId={currentUserId}
                       onClose={() => setShowMealPlanFeedback(false)}
                     />
                   ) : (
                     <FeedbackDisplay
-                      itemId={(activeMealPlan as any).id}
+                      itemId={activeMealPlan.id}
                       itemType="meal-plan"
                     />
                   )}
@@ -384,7 +385,7 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {(recipes as any[]).slice(0, 3).map((recipe: any) => (
+              {recipes.slice(0, 3).map((recipe) => (
                 <RecipeCard key={recipe.id} recipe={recipe} />
               ))}
             </div>

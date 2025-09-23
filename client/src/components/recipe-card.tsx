@@ -2,26 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
 import { Clock, Users, DollarSign } from "lucide-react";
-
-interface Recipe {
-  id: string;
-  title: string;
-  description: string;
-  prepTime: number;
-  cookTime: number;
-  servings: number;
-  estimatedCost: string;
-  rating: string;
-  nutrition: {
-    calories: number;
-    protein: number;
-    fiber: number;
-  };
-  isBatchCookable: boolean;
-  isKidFriendly: boolean;
-  dietaryTags: string[];
-  imageUrl?: string;
-}
+import { Recipe } from "@shared/schema";
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -56,7 +37,7 @@ export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
             {recipe.title}
           </h4>
           <StarRating 
-            value={parseFloat(recipe.rating)} 
+            value={recipe.rating ? parseFloat(recipe.rating) : 0} 
             readonly 
             size="sm" 
             showValue 
@@ -79,7 +60,7 @@ export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
           </span>
           <span className="flex items-center">
             <DollarSign className="mr-1 h-3 w-3" />
-            ${recipe.estimatedCost}
+            ${recipe.estimatedCost || '0.00'}
           </span>
         </div>
 
@@ -109,19 +90,19 @@ export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
         <div className="grid grid-cols-3 gap-2 text-xs">
           <div className="text-center">
             <div className="font-semibold" data-testid={`recipe-calories-${recipe.id}`}>
-              {recipe.nutrition.calories}
+              {(recipe.nutrition as any)?.calories || 0}
             </div>
             <div className="text-muted-foreground">Calories</div>
           </div>
           <div className="text-center">
             <div className="font-semibold" data-testid={`recipe-protein-${recipe.id}`}>
-              {recipe.nutrition.protein}g
+              {(recipe.nutrition as any)?.protein || 0}g
             </div>
             <div className="text-muted-foreground">Protein</div>
           </div>
           <div className="text-center">
             <div className="font-semibold" data-testid={`recipe-fiber-${recipe.id}`}>
-              {recipe.nutrition.fiber}g
+              {(recipe.nutrition as any)?.fiber || 0}g
             </div>
             <div className="text-muted-foreground">Fiber</div>
           </div>
