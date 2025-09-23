@@ -80,6 +80,28 @@ export const groceryPrices = pgTable("grocery_prices", {
   lastUpdated: timestamp("last_updated").defaultNow().notNull(),
 });
 
+export const recipeFeedback = pgTable("recipe_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  recipeId: varchar("recipe_id").notNull().references(() => recipes.id),
+  rating: integer("rating").notNull(), // 1-5 stars
+  comment: text("comment"), // optional comment
+  isLiked: boolean("is_liked"), // optional like/dislike, can be null
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const mealPlanFeedback = pgTable("meal_plan_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  mealPlanId: varchar("meal_plan_id").notNull().references(() => mealPlans.id),
+  rating: integer("rating").notNull(), // 1-5 stars
+  comment: text("comment"), // optional comment
+  isLiked: boolean("is_liked"), // optional like/dislike, can be null
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -114,6 +136,18 @@ export const insertGroceryPriceSchema = createInsertSchema(groceryPrices).omit({
   lastUpdated: true,
 });
 
+export const insertRecipeFeedbackSchema = createInsertSchema(recipeFeedback).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMealPlanFeedbackSchema = createInsertSchema(mealPlanFeedback).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -127,3 +161,7 @@ export type ShoppingList = typeof shoppingLists.$inferSelect;
 export type InsertShoppingList = z.infer<typeof insertShoppingListSchema>;
 export type GroceryPrice = typeof groceryPrices.$inferSelect;
 export type InsertGroceryPrice = z.infer<typeof insertGroceryPriceSchema>;
+export type RecipeFeedback = typeof recipeFeedback.$inferSelect;
+export type InsertRecipeFeedback = z.infer<typeof insertRecipeFeedbackSchema>;
+export type MealPlanFeedback = typeof mealPlanFeedback.$inferSelect;
+export type InsertMealPlanFeedback = z.infer<typeof insertMealPlanFeedbackSchema>;

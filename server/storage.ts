@@ -10,7 +10,11 @@ import {
   type ShoppingList,
   type InsertShoppingList,
   type GroceryPrice,
-  type InsertGroceryPrice
+  type InsertGroceryPrice,
+  type RecipeFeedback,
+  type InsertRecipeFeedback,
+  type MealPlanFeedback,
+  type InsertMealPlanFeedback
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -52,6 +56,20 @@ export interface IStorage {
   getGroceryPrices(itemName: string): Promise<GroceryPrice[]>;
   createGroceryPrice(price: InsertGroceryPrice): Promise<GroceryPrice>;
   updateGroceryPrices(itemName: string, prices: InsertGroceryPrice[]): Promise<void>;
+  
+  // Recipe Feedback
+  getRecipeFeedback(recipeId: string): Promise<RecipeFeedback[]>;
+  getUserRecipeFeedback(userId: string, recipeId: string): Promise<RecipeFeedback | undefined>;
+  createRecipeFeedback(feedback: InsertRecipeFeedback): Promise<RecipeFeedback>;
+  updateRecipeFeedback(id: string, updates: Partial<InsertRecipeFeedback>): Promise<RecipeFeedback | undefined>;
+  getRecipeAverageRating(recipeId: string): Promise<number>;
+  
+  // Meal Plan Feedback
+  getMealPlanFeedback(mealPlanId: string): Promise<MealPlanFeedback[]>;
+  getUserMealPlanFeedback(userId: string, mealPlanId: string): Promise<MealPlanFeedback | undefined>;
+  createMealPlanFeedback(feedback: InsertMealPlanFeedback): Promise<MealPlanFeedback>;
+  updateMealPlanFeedback(id: string, updates: Partial<InsertMealPlanFeedback>): Promise<MealPlanFeedback | undefined>;
+  getMealPlanAverageRating(mealPlanId: string): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
@@ -61,6 +79,8 @@ export class MemStorage implements IStorage {
   private mealPlans: Map<string, MealPlan> = new Map();
   private shoppingLists: Map<string, ShoppingList> = new Map();
   private groceryPrices: Map<string, GroceryPrice[]> = new Map();
+  private recipeFeedback: Map<string, RecipeFeedback> = new Map();
+  private mealPlanFeedback: Map<string, MealPlanFeedback> = new Map();
 
   constructor() {
     this.initializeSampleData();
@@ -219,7 +239,15 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const profile: UserProfile = {
       ...insertProfile,
-      id
+      id,
+      dietaryRestrictions: insertProfile.dietaryRestrictions || null,
+      allergies: insertProfile.allergies || null,
+      medicalConditions: insertProfile.medicalConditions || null,
+      kitchenEquipment: insertProfile.kitchenEquipment || null,
+      childrenAges: insertProfile.childrenAges || null,
+      goals: insertProfile.goals || null,
+      preferredCuisines: insertProfile.preferredCuisines || null,
+      dislikedIngredients: insertProfile.dislikedIngredients || null
     };
     this.userProfiles.set(id, profile);
     return profile;
@@ -262,6 +290,13 @@ export class MemStorage implements IStorage {
       ...insertRecipe,
       id,
       rating: "0",
+      cuisineType: insertRecipe.cuisineType || null,
+      dietaryTags: insertRecipe.dietaryTags || null,
+      imageUrl: insertRecipe.imageUrl || null,
+      estimatedCost: insertRecipe.estimatedCost || null,
+      isBatchCookable: insertRecipe.isBatchCookable || null,
+      isFreezerFriendly: insertRecipe.isFreezerFriendly || null,
+      isKidFriendly: insertRecipe.isKidFriendly || null,
       createdAt: new Date()
     };
     this.recipes.set(id, recipe);
@@ -297,6 +332,8 @@ export class MemStorage implements IStorage {
       ...insertMealPlan,
       id,
       isActive: true,
+      totalCost: insertMealPlan.totalCost || null,
+      totalCalories: insertMealPlan.totalCalories || null,
       createdAt: new Date()
     };
     this.mealPlans.set(id, mealPlan);
@@ -332,6 +369,8 @@ export class MemStorage implements IStorage {
     const shoppingList: ShoppingList = {
       ...insertShoppingList,
       id,
+      mealPlanId: insertShoppingList.mealPlanId || null,
+      totalEstimatedCost: insertShoppingList.totalEstimatedCost || null,
       isCompleted: false,
       createdAt: new Date()
     };
@@ -375,6 +414,115 @@ export class MemStorage implements IStorage {
       lastUpdated: new Date()
     }));
     this.groceryPrices.set(itemName, groceryPrices);
+  }
+
+  // Recipe Feedback methods
+  async getRecipeFeedback(recipeId: string): Promise<RecipeFeedback[]> {
+    return Array.from(this.recipeFeedback.values()).filter(feedback => feedback.recipeId === recipeId);
+  }
+
+  async getUserRecipeFeedback(userId: string, recipeId: string): Promise<RecipeFeedback | undefined> {
+    return Array.from(this.recipeFeedback.values()).find(
+      feedback => feedback.userId === userId && feedback.recipeId === recipeId
+    );
+  }
+
+  async createRecipeFeedback(insertFeedback: InsertRecipeFeedback): Promise<RecipeFeedback> {
+    const id = randomUUID();
+    const feedback: RecipeFeedback = {
+      ...insertFeedback,
+      id,
+      isLiked: insertFeedback.isLiked || null,
+      comment: insertFeedback.comment || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.recipeFeedback.set(id, feedback);
+    
+    // Update recipe average rating
+    await this.updateRecipeRating(insertFeedback.recipeId);
+    
+    return feedback;
+  }
+
+  async updateRecipeFeedback(id: string, updates: Partial<InsertRecipeFeedback>): Promise<RecipeFeedback | undefined> {
+    const existing = this.recipeFeedback.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.recipeFeedback.set(id, updated);
+    
+    // Update recipe average rating
+    await this.updateRecipeRating(existing.recipeId);
+    
+    return updated;
+  }
+
+  async getRecipeAverageRating(recipeId: string): Promise<number> {
+    const feedbacks = await this.getRecipeFeedback(recipeId);
+    if (feedbacks.length === 0) return 0;
+    
+    const totalRating = feedbacks.reduce((sum, feedback) => sum + feedback.rating, 0);
+    return Math.round((totalRating / feedbacks.length) * 10) / 10; // Round to 1 decimal
+  }
+
+  private async updateRecipeRating(recipeId: string): Promise<void> {
+    const recipe = this.recipes.get(recipeId);
+    if (recipe) {
+      const averageRating = await this.getRecipeAverageRating(recipeId);
+      recipe.rating = averageRating.toString();
+      this.recipes.set(recipeId, recipe);
+    }
+  }
+
+  // Meal Plan Feedback methods
+  async getMealPlanFeedback(mealPlanId: string): Promise<MealPlanFeedback[]> {
+    return Array.from(this.mealPlanFeedback.values()).filter(feedback => feedback.mealPlanId === mealPlanId);
+  }
+
+  async getUserMealPlanFeedback(userId: string, mealPlanId: string): Promise<MealPlanFeedback | undefined> {
+    return Array.from(this.mealPlanFeedback.values()).find(
+      feedback => feedback.userId === userId && feedback.mealPlanId === mealPlanId
+    );
+  }
+
+  async createMealPlanFeedback(insertFeedback: InsertMealPlanFeedback): Promise<MealPlanFeedback> {
+    const id = randomUUID();
+    const feedback: MealPlanFeedback = {
+      ...insertFeedback,
+      id,
+      isLiked: insertFeedback.isLiked || null,
+      comment: insertFeedback.comment || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.mealPlanFeedback.set(id, feedback);
+    return feedback;
+  }
+
+  async updateMealPlanFeedback(id: string, updates: Partial<InsertMealPlanFeedback>): Promise<MealPlanFeedback | undefined> {
+    const existing = this.mealPlanFeedback.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.mealPlanFeedback.set(id, updated);
+    return updated;
+  }
+
+  async getMealPlanAverageRating(mealPlanId: string): Promise<number> {
+    const feedbacks = await this.getMealPlanFeedback(mealPlanId);
+    if (feedbacks.length === 0) return 0;
+    
+    const totalRating = feedbacks.reduce((sum, feedback) => sum + feedback.rating, 0);
+    return Math.round((totalRating / feedbacks.length) * 10) / 10; // Round to 1 decimal
   }
 }
 
