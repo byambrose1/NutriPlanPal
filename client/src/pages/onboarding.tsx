@@ -201,8 +201,10 @@ export default function Onboarding() {
   });
 
   const onSubmit = async (data: ProfileFormData) => {
+    console.log('Form submitted with data:', data);
     try {
       // Create user first
+      console.log('Creating user...');
       const userResponse = await createUserMutation.mutateAsync({
         name: data.name,
         email: data.email,
@@ -210,8 +212,10 @@ export default function Onboarding() {
       });
 
       const user = await userResponse.json();
+      console.log('User created:', user);
 
       // Create profile
+      console.log('Creating profile...');
       await createProfileMutation.mutateAsync({
         userId: user.id,
         profileData: {
@@ -230,6 +234,7 @@ export default function Onboarding() {
         }
       });
 
+      console.log('Profile created successfully');
       toast({
         title: "Welcome to NutriPlan!",
         description: "Your profile has been created successfully.",
@@ -237,6 +242,7 @@ export default function Onboarding() {
 
       setLocation("/");
     } catch (error) {
+      console.error('Onboarding submission error:', error);
       toast({
         title: "Error",
         description: "Failed to create your profile. Please try again.",
@@ -302,7 +308,7 @@ export default function Onboarding() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="name" className="flex items-center">
-                    Full Name *
+                    Name *
                     <InfoTooltip content="We use your name to personalize your meal plans and create a welcoming experience." />
                   </Label>
                   <Controller
@@ -741,6 +747,11 @@ export default function Onboarding() {
                 type="submit"
                 disabled={createUserMutation.isPending || createProfileMutation.isPending}
                 data-testid="button-complete-onboarding"
+                onClick={(e) => {
+                  console.log('Complete Setup button clicked');
+                  console.log('Form errors:', errors);
+                  // Let the form handle the submit
+                }}
               >
                 {(createUserMutation.isPending || createProfileMutation.isPending) ? "Creating Profile..." : "Complete Setup"}
               </Button>
