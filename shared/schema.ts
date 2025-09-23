@@ -3,6 +3,28 @@ import { pgTable, text, varchar, integer, decimal, boolean, timestamp, jsonb } f
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Image metadata interface for responsive images
+export interface ImageMetadata {
+  thumbnail: string;
+  medium: string;
+  large: string;
+  original: string;
+  alt: string;
+  aspectRatio: number;
+  dominantColor: string;
+}
+
+// Zod schema for ImageMetadata validation
+export const imageMetadataSchema = z.object({
+  thumbnail: z.string().url(),
+  medium: z.string().url(),
+  large: z.string().url(),
+  original: z.string().url(),
+  alt: z.string(),
+  aspectRatio: z.number().positive(),
+  dominantColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/), // hex color format
+});
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
@@ -47,6 +69,7 @@ export const recipes = pgTable("recipes", {
   isKidFriendly: boolean("is_kid_friendly").default(false),
   rating: decimal("rating", { precision: 3, scale: 2 }).default(sql`0`),
   imageUrl: text("image_url"),
+  imageMetadata: jsonb("image_metadata"), // { thumbnail: string, medium: string, large: string, original: string, alt: string, aspectRatio: number, dominantColor: string }
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -117,6 +140,8 @@ export const insertRecipeSchema = createInsertSchema(recipes).omit({
   id: true,
   createdAt: true,
   rating: true,
+}).extend({
+  imageMetadata: imageMetadataSchema.optional(),
 });
 
 export const insertMealPlanSchema = createInsertSchema(mealPlans).omit({
