@@ -1,0 +1,76 @@
+Update the existing NutriPlanPal landing page to be inclusive for all users, keeping the current font style, layout, and mobile-friendly design. The updates should include:
+
+A new banner/title (replacing “🎉 NEW: AI-Powered Family Meal Planning”)
+
+Slideshow-style rotating headlines that address pain points
+
+Subtext that expands on the pain points and positions NutriPlanPal as the solution
+
+British English (with optional American English toggle)
+
+Fully compatible with mobile and desktop layouts
+
+1. Banner / Hero Title
+
+Replace: 🎉 NEW: AI-Powered Family Meal Planning
+
+Suggested inclusive banner options (choose one or rotate dynamically):
+
+🎉 NEW: Personalised Meal Plans for Everyone
+
+🎉 NEW: Smart, Stress-Free Meal Planning
+
+🎉 NEW: Your Personalised Path to Easier Eating
+
+🎉 NEW: Meal Planning Made Simple for Any Lifestyle
+
+2. Slideshow Headline + Subtext
+
+Slide format:
+
+Headline: [Pain point phrased as a question or statement]
+
+Subtext: [Directly addresses the pain point and positions NutriPlanPal as the solution]
+
+Headline: “Don’t Know What to Eat Tonight?”
+Subtext: Stop the decision fatigue! NutriPlanPal generates personalised meal plans and shopping lists so dinner is sorted in seconds.
+
+Headline: “Tired of Repeating the Same Meals Every Week?”
+Subtext: Break the boredom! NutriPlanPal suggests fresh, exciting recipes tailored to your tastes and goals.
+
+Headline: “Struggling to Eat Right for Your Fitness Goals?”
+Subtext: Hit your macros effortlessly! NutriPlanPal creates meal plans designed to support your protein, calorie, and fitness targets.
+
+Headline: “Spending Too Much Time or Money on Groceries?”
+Subtext: Save time and cut costs! NutriPlanPal optimises shopping lists and reduces food waste automatically.
+
+Headline: “Can’t Stick to Your Diet, Even When You Try?”
+Subtext: Stay on track without stress! NutriPlanPal provides flexible, personalised meal plans that fit your lifestyle.
+
+Headline: “Wish Meal Planning Could Just Do It For You?”
+Subtext: Take the guesswork out! NutriPlanPal generates complete weekly meal plans in seconds.
+
+Headline: “Eating Vegan, Vegetarian, or Special Diets but Bored of the Same Recipes?”
+Subtext: Never get stuck! NutriPlanPal gives endless variety while respecting your dietary preferences.
+
+Headline: “Confused About Portion Sizes, Calories, or Nutrients?”
+Subtext: Know exactly what to eat! NutriPlanPal guides you so every meal hits your nutritional needs.
+
+Headline: “Want Healthy Meals Without the Stress?”
+Subtext: Simplify your life! NutriPlanPal makes eating smarter, easier, and more enjoyable for any lifestyle.
+
+3. Implementation Notes for Replit AI
+
+Keep current font, text size, and style; only update the text content.
+
+Rotate these headlines and subtext in a slideshow. Each slide shows the headline + subtext for 3–6 seconds before transitioning.
+
+All subtext must address the pain point in the headline, positioning NutriPlanPal as the immediate solution.
+
+Replace any family-specific language with inclusive phrasing to appeal to all demographics.
+
+Maintain mobile responsiveness and usability for all devices.
+
+Text should be in British English with an optional toggle for American English.
+
+Optional: add minor micro-benefit bullet points below subtext if desired (e.g., “Save 2+ hours each week” or “Never repeat boring meals again”).

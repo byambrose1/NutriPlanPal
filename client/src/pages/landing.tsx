@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,20 +25,148 @@ type Language = 'en-GB' | 'en-US';
 
 const Landing = () => {
   const [language, setLanguage] = useState<Language>('en-GB');
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+  // Rotating banner options
+  const bannerOptions = {
+    'en-GB': [
+      '🎉 NEW: Personalised Meal Plans for Everyone',
+      '🎉 NEW: Smart, Stress-Free Meal Planning',
+      '🎉 NEW: Your Personalised Path to Easier Eating',
+      '🎉 NEW: Meal Planning Made Simple for Any Lifestyle'
+    ],
+    'en-US': [
+      '🎉 NEW: Personalized Meal Plans for Everyone',
+      '🎉 NEW: Smart, Stress-Free Meal Planning', 
+      '🎉 NEW: Your Personalized Path to Easier Eating',
+      '🎉 NEW: Meal Planning Made Simple for Any Lifestyle'
+    ]
+  };
+
+  // Slideshow headlines and subtext
+  const slideshowContent = {
+    'en-GB': [
+      {
+        headline: "Don't Know What to Eat Tonight?",
+        subtext: "Stop the decision fatigue! NutriPlanPal generates personalised meal plans and shopping lists so dinner is sorted in seconds.",
+        microBenefit: "Save 2+ hours each week"
+      },
+      {
+        headline: "Tired of Repeating the Same Meals Every Week?",
+        subtext: "Break the boredom! NutriPlanPal suggests fresh, exciting recipes tailored to your tastes and goals.",
+        microBenefit: "Never repeat boring meals again"
+      },
+      {
+        headline: "Struggling to Eat Right for Your Fitness Goals?",
+        subtext: "Hit your macros effortlessly! NutriPlanPal creates meal plans designed to support your protein, calorie, and fitness targets.",
+        microBenefit: "Track nutrition automatically"
+      },
+      {
+        headline: "Spending Too Much Time or Money on Groceries?",
+        subtext: "Save time and cut costs! NutriPlanPal optimises shopping lists and reduces food waste automatically.",
+        microBenefit: "Cut food waste by 40%"
+      },
+      {
+        headline: "Can't Stick to Your Diet, Even When You Try?",
+        subtext: "Stay on track without stress! NutriPlanPal provides flexible, personalised meal plans that fit your lifestyle.",
+        microBenefit: "Flexible plans that actually work"
+      },
+      {
+        headline: "Wish Meal Planning Could Just Do It For You?",
+        subtext: "Take the guesswork out! NutriPlanPal generates complete weekly meal plans in seconds.",
+        microBenefit: "Complete plans in seconds"
+      },
+      {
+        headline: "Eating Vegan, Vegetarian, or Special Diets but Bored?",
+        subtext: "Never get stuck! NutriPlanPal gives endless variety whilst respecting your dietary preferences.",
+        microBenefit: "Endless dietary variety"
+      },
+      {
+        headline: "Confused About Portion Sizes or Nutrients?",
+        subtext: "Know exactly what to eat! NutriPlanPal guides you so every meal hits your nutritional needs.",
+        microBenefit: "Perfect portions every time"
+      },
+      {
+        headline: "Want Healthy Meals Without the Stress?",
+        subtext: "Simplify your life! NutriPlanPal makes eating smarter, easier, and more enjoyable for any lifestyle.",
+        microBenefit: "Stress-free healthy eating"
+      }
+    ],
+    'en-US': [
+      {
+        headline: "Don't Know What to Eat Tonight?",
+        subtext: "Stop the decision fatigue! NutriPlanPal generates personalized meal plans and shopping lists so dinner is sorted in seconds.",
+        microBenefit: "Save 2+ hours each week"
+      },
+      {
+        headline: "Tired of Repeating the Same Meals Every Week?",
+        subtext: "Break the boredom! NutriPlanPal suggests fresh, exciting recipes tailored to your tastes and goals.",
+        microBenefit: "Never repeat boring meals again"
+      },
+      {
+        headline: "Struggling to Eat Right for Your Fitness Goals?",
+        subtext: "Hit your macros effortlessly! NutriPlanPal creates meal plans designed to support your protein, calorie, and fitness targets.",
+        microBenefit: "Track nutrition automatically"
+      },
+      {
+        headline: "Spending Too Much Time or Money on Groceries?",
+        subtext: "Save time and cut costs! NutriPlanPal optimizes shopping lists and reduces food waste automatically.",
+        microBenefit: "Cut food waste by 40%"
+      },
+      {
+        headline: "Can't Stick to Your Diet, Even When You Try?",
+        subtext: "Stay on track without stress! NutriPlanPal provides flexible, personalized meal plans that fit your lifestyle.",
+        microBenefit: "Flexible plans that actually work"
+      },
+      {
+        headline: "Wish Meal Planning Could Just Do It For You?",
+        subtext: "Take the guesswork out! NutriPlanPal generates complete weekly meal plans in seconds.",
+        microBenefit: "Complete plans in seconds"
+      },
+      {
+        headline: "Eating Vegan, Vegetarian, or Special Diets but Bored?",
+        subtext: "Never get stuck! NutriPlanPal gives endless variety while respecting your dietary preferences.",
+        microBenefit: "Endless dietary variety"
+      },
+      {
+        headline: "Confused About Portion Sizes or Nutrients?",
+        subtext: "Know exactly what to eat! NutriPlanPal guides you so every meal hits your nutritional needs.",
+        microBenefit: "Perfect portions every time"
+      },
+      {
+        headline: "Want Healthy Meals Without the Stress?",
+        subtext: "Simplify your life! NutriPlanPal makes eating smarter, easier, and more enjoyable for any lifestyle.",
+        microBenefit: "Stress-free healthy eating"
+      }
+    ]
+  };
+
+  // Slideshow rotation logic
+  useEffect(() => {
+    const bannerInterval = setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev + 1) % bannerOptions[language].length);
+    }, 8000); // Change banner every 8 seconds
+
+    const slideInterval = setInterval(() => {
+      setCurrentSlideIndex((prev) => (prev + 1) % slideshowContent[language].length);
+    }, 4000); // Change slide every 4 seconds
+
+    return () => {
+      clearInterval(bannerInterval);
+      clearInterval(slideInterval);
+    };
+  }, [language, bannerOptions, slideshowContent]);
 
   const content = {
     'en-GB': {
       hero: {
-        badge: "🎉 NEW: AI-Powered Family Meal Planning",
-        headline: "Transform Family Mealtimes into",
-        highlightedText: "Joyful Adventures",
-        subheadline: "Stop the 'What's for dinner?' stress forever! NutriPlanPal creates personalised meal plans, optimises your shopping, and brings families together around delicious, healthy food.",
         ctaPrimary: "Start Free Today",
         ctaSecondary: "Watch Demo",
-        trustBadge: "Trusted by 10,000+ families"
+        trustBadge: "Trusted by 10,000+ users"
       },
       benefits: {
-        title: "Why Families Love NutriPlanPal",
+        title: "Why People Love NutriPlanPal",
         subtitle: "From chaos to culinary bliss in just minutes per week",
         items: [
           {
@@ -53,19 +181,19 @@ const Landing = () => {
           },
           {
             icon: Heart,
-            title: "Healthier, Happier Families",
+            title: "Healthier, Happier Living",
             description: "Nutritionally balanced meals that even picky eaters will love"
           }
         ]
       },
       features: {
-        title: "Everything You Need for Family Food Success",
-        subtitle: "Powered by AI, designed for real families",
+        title: "Everything You Need for Food Success",
+        subtitle: "Powered by AI, designed for real people",
         items: [
           {
             icon: Sparkles,
             title: "AI Meal Planning Magic",
-            description: "Get personalised weekly meal plans that consider your family's tastes, dietary needs, and schedule",
+            description: "Get personalised weekly meal plans that consider your tastes, dietary needs, and schedule",
             highlight: "Smart AI"
           },
           {
@@ -77,14 +205,14 @@ const Landing = () => {
           {
             icon: Calculator,
             title: "Nutrition Tracking Made Simple",
-            description: "See exactly what nutrients your family is getting, with easy visual dashboards and progress tracking",
+            description: "See exactly what nutrients you're getting, with easy visual dashboards and progress tracking",
             highlight: "Stay Healthy"
           },
           {
             icon: Users,
             title: "Kid-Friendly Cooking",
             description: "Age-appropriate cooking activities and safety guidelines to involve children in meal preparation",
-            highlight: "Family Fun"
+            highlight: "Cooking Fun"
           },
           {
             icon: Zap,
@@ -101,21 +229,21 @@ const Landing = () => {
         ]
       },
       social: {
-        title: "Join Thousands of Happy Families",
+        title: "Join Thousands of Happy Users",
         testimonials: [
           {
-            quote: "NutriPlanPal saved our family dinners! No more 'What's for tea?' arguments.",
-            author: "Sarah M., Mum of 3",
+            quote: "NutriPlanPal saved our dinner routine! No more 'What's for tea?' arguments.",
+            author: "Sarah M., Home Cook",
             rating: 5
           },
           {
             quote: "Cut our grocery bill by £200/month and actually eat healthier. Brilliant!",
-            author: "James D., Father of 2", 
+            author: "James D., Busy Professional", 
             rating: 5
           },
           {
-            quote: "My kids actually help with cooking now. The age-appropriate suggestions are spot-on.",
-            author: "Lisa K., Parent & Teacher",
+            quote: "The age-appropriate cooking suggestions are spot-on for involving everyone in meal prep.",
+            author: "Lisa K., Teacher & Cook",
             rating: 5
           }
         ]
@@ -125,11 +253,11 @@ const Landing = () => {
         items: [
           {
             q: "How does the AI meal planning work?",
-            a: "Our AI analyses your family's preferences, dietary requirements, cooking skills, and schedule to create personalised weekly meal plans. It learns from your feedback to improve suggestions over time."
+            a: "Our AI analyses your preferences, dietary requirements, cooking skills, and schedule to create personalised weekly meal plans. It learns from your feedback to improve suggestions over time."
           },
           {
             q: "Can it handle multiple dietary requirements?",
-            a: "Absolutely! Whether you have vegans, gluten-free, nut allergies, or picky eaters, NutriPlanPal creates meal plans that work for everyone in your family."
+            a: "Absolutely! Whether you have vegans, gluten-free, nut allergies, or picky eaters, NutriPlanPal creates meal plans that work for your individual needs."
           },
           {
             q: "How much does it cost?",
@@ -142,24 +270,20 @@ const Landing = () => {
         ]
       },
       cta: {
-        title: "Ready to Transform Your Family's Relationship with Food?",
-        subtitle: "Join thousands of families who've already revolutionised their mealtimes",
+        title: "Ready to Transform Your Relationship with Food?",
+        subtitle: "Join thousands of people who've already revolutionised their mealtimes",
         button: "Start Your Free Journey",
         guarantee: "✅ 30-day money-back guarantee"
       }
     },
     'en-US': {
       hero: {
-        badge: "🎉 NEW: AI-Powered Family Meal Planning",
-        headline: "Transform Family Mealtimes into",
-        highlightedText: "Joyful Adventures", 
-        subheadline: "Stop the 'What's for dinner?' stress forever! NutriPlanPal creates personalized meal plans, optimizes your shopping, and brings families together around delicious, healthy food.",
         ctaPrimary: "Start Free Today",
-        ctaSecondary: "Watch Demo", 
-        trustBadge: "Trusted by 10,000+ families"
+        ctaSecondary: "Watch Demo",
+        trustBadge: "Trusted by 10,000+ users"
       },
       benefits: {
-        title: "Why Families Love NutriPlanPal",
+        title: "Why People Love NutriPlanPal",
         subtitle: "From chaos to culinary bliss in just minutes per week",
         items: [
           {
@@ -174,19 +298,19 @@ const Landing = () => {
           },
           {
             icon: Heart,
-            title: "Healthier, Happier Families", 
+            title: "Healthier, Happier Living", 
             description: "Nutritionally balanced meals that even picky eaters will love"
           }
         ]
       },
       features: {
-        title: "Everything You Need for Family Food Success",
-        subtitle: "Powered by AI, designed for real families",
+        title: "Everything You Need for Food Success",
+        subtitle: "Powered by AI, designed for real people",
         items: [
           {
             icon: Sparkles,
             title: "AI Meal Planning Magic",
-            description: "Get personalized weekly meal plans that consider your family's tastes, dietary needs, and schedule",
+            description: "Get personalized weekly meal plans that consider your tastes, dietary needs, and schedule",
             highlight: "Smart AI"
           },
           {
@@ -198,14 +322,14 @@ const Landing = () => {
           {
             icon: Calculator,
             title: "Nutrition Tracking Made Simple",
-            description: "See exactly what nutrients your family is getting, with easy visual dashboards and progress tracking",
+            description: "See exactly what nutrients you're getting, with easy visual dashboards and progress tracking",
             highlight: "Stay Healthy"
           },
           {
             icon: Users,
             title: "Kid-Friendly Cooking",
             description: "Age-appropriate cooking activities and safety guidelines to involve children in meal preparation",
-            highlight: "Family Fun"
+            highlight: "Cooking Fun"
           },
           {
             icon: Zap,
@@ -222,21 +346,21 @@ const Landing = () => {
         ]
       },
       social: {
-        title: "Join Thousands of Happy Families",
+        title: "Join Thousands of Happy Users",
         testimonials: [
           {
-            quote: "NutriPlanPal saved our family dinners! No more 'What's for dinner?' arguments.",
-            author: "Sarah M., Mom of 3",
+            quote: "NutriPlanPal saved our dinner routine! No more 'What's for dinner?' arguments.",
+            author: "Sarah M., Home Cook",
             rating: 5
           },
           {
             quote: "Cut our grocery bill by $300/month and actually eat healthier. Amazing!",
-            author: "James D., Father of 2",
+            author: "James D., Busy Professional",
             rating: 5
           },
           {
-            quote: "My kids actually help with cooking now. The age-appropriate suggestions are spot-on.",
-            author: "Lisa K., Parent & Teacher", 
+            quote: "The age-appropriate cooking suggestions are spot-on for involving everyone in meal prep.",
+            author: "Lisa K., Teacher & Cook", 
             rating: 5
           }
         ]
@@ -246,11 +370,11 @@ const Landing = () => {
         items: [
           {
             q: "How does the AI meal planning work?",
-            a: "Our AI analyzes your family's preferences, dietary requirements, cooking skills, and schedule to create personalized weekly meal plans. It learns from your feedback to improve suggestions over time."
+            a: "Our AI analyzes your preferences, dietary requirements, cooking skills, and schedule to create personalized weekly meal plans. It learns from your feedback to improve suggestions over time."
           },
           {
             q: "Can it handle multiple dietary requirements?", 
-            a: "Absolutely! Whether you have vegans, gluten-free, nut allergies, or picky eaters, NutriPlanPal creates meal plans that work for everyone in your family."
+            a: "Absolutely! Whether you have vegans, gluten-free, nut allergies, or picky eaters, NutriPlanPal creates meal plans that work for your individual needs."
           },
           {
             q: "How much does it cost?",
@@ -263,8 +387,8 @@ const Landing = () => {
         ]
       },
       cta: {
-        title: "Ready to Transform Your Family's Relationship with Food?", 
-        subtitle: "Join thousands of families who've already revolutionized their mealtimes",
+        title: "Ready to Transform Your Relationship with Food?", 
+        subtitle: "Join thousands of people who've already revolutionized their mealtimes",
         button: "Start Your Free Journey",
         guarantee: "✅ 30-day money-back guarantee"
       }
@@ -301,27 +425,35 @@ const Landing = () => {
         </div>
       </div>
 
-      {/* Hero Section */}
+      {/* Hero Section with Rotating Slideshow */}
       <section className="relative overflow-hidden pt-20 pb-16 px-4">
         <div className="max-w-7xl mx-auto text-center">
+          {/* Rotating Banner */}
           <Badge 
             variant="secondary" 
-            className="mb-6 bg-gradient-to-r from-orange-100 to-yellow-100 dark:from-orange-900 dark:to-yellow-900 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-700 animate-pulse"
+            className="mb-6 bg-gradient-to-r from-orange-100 to-yellow-100 dark:from-orange-900 dark:to-yellow-900 text-orange-800 dark:text-orange-200 border-orange-200 dark:border-orange-700 animate-pulse transition-all duration-500"
             data-testid="hero-badge"
           >
-            {currentContent.hero.badge}
+            {bannerOptions[language][currentBannerIndex]}
           </Badge>
           
-          <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-            {currentContent.hero.headline}<br />
-            <span className="bg-gradient-to-r from-orange-500 via-yellow-500 to-emerald-500 bg-clip-text text-transparent animate-gradient-x">
-              {currentContent.hero.highlightedText}
-            </span>
-          </h1>
-          
-          <p className="text-xl lg:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-4xl mx-auto leading-relaxed" data-testid="hero-subtitle">
-            {currentContent.hero.subheadline}
-          </p>
+          {/* Rotating Headlines */}
+          <div className="min-h-[200px] flex flex-col justify-center">
+            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight transition-all duration-500 ease-in-out">
+              <span className="bg-gradient-to-r from-orange-500 via-yellow-500 to-emerald-500 bg-clip-text text-transparent">
+                {slideshowContent[language][currentSlideIndex].headline}
+              </span>
+            </h1>
+            
+            <p className="text-xl lg:text-2xl text-gray-600 dark:text-gray-300 mb-4 max-w-4xl mx-auto leading-relaxed transition-all duration-500 ease-in-out" data-testid="hero-subtitle">
+              {slideshowContent[language][currentSlideIndex].subtext}
+            </p>
+            
+            {/* Micro-benefit */}
+            <p className="text-lg text-orange-600 dark:text-orange-400 font-semibold mb-8 transition-all duration-500 ease-in-out">
+              ✨ {slideshowContent[language][currentSlideIndex].microBenefit}
+            </p>
+          </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <Link href="/onboarding">
