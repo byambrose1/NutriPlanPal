@@ -1,19 +1,24 @@
+import { useState } from "react";
 import { Navigation } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { RecipeCard } from "@/components/recipe-card";
 import { MealPlanGrid } from "@/components/meal-plan-grid";
 import { NutritionOverview } from "@/components/nutrition-overview";
+import { FeedbackDisplay } from "@/components/feedback/feedback-display";
+import { MealPlanFeedback } from "@/components/feedback/meal-plan-feedback";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { Plus, List, PieChart, Baby, Sparkles, Route, ChevronLeft, ChevronRight, DollarSign, Calendar, Clock, Heart } from "lucide-react";
+import { Plus, List, PieChart, Baby, Sparkles, Route, ChevronLeft, ChevronRight, DollarSign, Calendar, Clock, Heart, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   // Mock user data - in production this would come from authentication
   const currentUserId = "user-1";
+  const [showMealPlanFeedback, setShowMealPlanFeedback] = useState(false);
 
   // Fetch active meal plan
   const { data: activeMealPlan, isLoading: mealPlanLoading } = useQuery({
@@ -278,6 +283,42 @@ export default function Dashboard() {
               </div>
             </div>
             <MealPlanGrid mealPlan={activeMealPlan} isLoading={mealPlanLoading} />
+            
+            {/* Meal Plan Feedback Section */}
+            {activeMealPlan && !mealPlanLoading && (
+              <>
+                <Separator className="my-6" />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Meal Plan Feedback
+                    </h4>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowMealPlanFeedback(!showMealPlanFeedback)}
+                      data-testid="button-rate-meal-plan"
+                    >
+                      {showMealPlanFeedback ? "Cancel" : "Rate Meal Plan"}
+                    </Button>
+                  </div>
+
+                  {showMealPlanFeedback ? (
+                    <MealPlanFeedback
+                      mealPlan={activeMealPlan}
+                      userId={currentUserId}
+                      onClose={() => setShowMealPlanFeedback(false)}
+                    />
+                  ) : (
+                    <FeedbackDisplay
+                      itemId={activeMealPlan.id}
+                      itemType="meal-plan"
+                    />
+                  )}
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
