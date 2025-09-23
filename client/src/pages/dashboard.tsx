@@ -285,7 +285,7 @@ export default function Dashboard() {
             <MealPlanGrid mealPlan={activeMealPlan} isLoading={mealPlanLoading} />
             
             {/* Meal Plan Feedback Section */}
-            {activeMealPlan && !mealPlanLoading && (
+            {activeMealPlan && !mealPlanLoading && typeof activeMealPlan === 'object' && 'id' in activeMealPlan && (
               <>
                 <Separator className="my-6" />
                 <div className="space-y-4">
@@ -306,13 +306,13 @@ export default function Dashboard() {
 
                   {showMealPlanFeedback ? (
                     <MealPlanFeedback
-                      mealPlan={activeMealPlan}
+                      mealPlan={activeMealPlan as any}
                       userId={currentUserId}
                       onClose={() => setShowMealPlanFeedback(false)}
                     />
                   ) : (
                     <FeedbackDisplay
-                      itemId={activeMealPlan.id}
+                      itemId={(activeMealPlan as any).id}
                       itemType="meal-plan"
                     />
                   )}
