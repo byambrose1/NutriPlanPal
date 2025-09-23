@@ -10,13 +10,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, User, Users, DollarSign, UtensilsCrossed, Heart, Target } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Users, DollarSign, UtensilsCrossed, Heart, Target, Check, HelpCircle } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -70,6 +71,99 @@ const COMMON_DISLIKES = [
   "mushrooms", "onions", "garlic", "cilantro", "seafood", "organ-meat", 
   "spicy-food", "bitter-greens", "coconut", "olives"
 ];
+
+const ONBOARDING_STEPS = [
+  { id: 1, title: "Basic Info", icon: User, description: "Tell us about yourself" },
+  { id: 2, title: "Family & Budget", icon: Users, description: "Family size and weekly budget" },
+  { id: 3, title: "Health & Diet", icon: Heart, description: "Dietary restrictions and health info" },
+  { id: 4, title: "Kitchen Setup", icon: UtensilsCrossed, description: "Available kitchen equipment" },
+  { id: 5, title: "Goals & Tastes", icon: Target, description: "Preferences and health goals" },
+  { id: 6, title: "Meal Prep", icon: DollarSign, description: "Meal preparation preferences" }
+];
+
+// Enhanced Step Progress Indicator Component
+const StepProgressIndicator = ({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) => {
+  return (
+    <div className="mb-8">
+      <div className="flex justify-between text-sm text-muted-foreground mb-4">
+        <span>Step {currentStep} of {totalSteps}</span>
+        <span>{Math.round((currentStep / totalSteps) * 100)}% complete</span>
+      </div>
+      
+      {/* Desktop Step Indicator */}
+      <div className="hidden md:flex items-center justify-between mb-4">
+        {ONBOARDING_STEPS.map((step, index) => {
+          const isCompleted = step.id < currentStep;
+          const isCurrent = step.id === currentStep;
+          const isUpcoming = step.id > currentStep;
+          
+          return (
+            <div key={step.id} className="flex items-center">
+              <div className="flex flex-col items-center">
+                <div className={`
+                  w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all
+                  ${isCompleted ? 'bg-primary text-primary-foreground' : ''}
+                  ${isCurrent ? 'bg-primary/20 text-primary border-2 border-primary' : ''}
+                  ${isUpcoming ? 'bg-muted text-muted-foreground' : ''}
+                `}>
+                  {isCompleted ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    <step.icon className="w-5 h-5" />
+                  )}
+                </div>
+                <div className="mt-2 text-center">
+                  <div className={`text-xs font-medium ${
+                    isCurrent ? 'text-primary' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                  }`}>
+                    {step.title}
+                  </div>
+                  <div className="text-xs text-muted-foreground max-w-20 leading-tight">
+                    {step.description}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Connector Line */}
+              {index < ONBOARDING_STEPS.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-4 transition-colors ${
+                  step.id < currentStep ? 'bg-primary' : 'bg-muted'
+                }`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Mobile Progress Bar */}
+      <div className="md:hidden">
+        <Progress value={(currentStep / totalSteps) * 100} className="h-2" data-testid="onboarding-progress" />
+        <div className="mt-2 text-center">
+          <div className="text-sm font-medium text-foreground">
+            {ONBOARDING_STEPS[currentStep - 1].title}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {ONBOARDING_STEPS[currentStep - 1].description}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Tooltip Helper Component
+const InfoTooltip = ({ content, side = "top" }: { content: string; side?: "top" | "bottom" | "left" | "right" }) => {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help ml-1" />
+      </TooltipTrigger>
+      <TooltipContent side={side} className="max-w-xs">
+        <p>{content}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
@@ -174,8 +268,9 @@ export default function Onboarding() {
   const watchedValues = watch();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10 p-4">
-      <div className="container mx-auto max-w-2xl">
+    <TooltipProvider>
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10 p-4">
+        <div className="container mx-auto max-w-2xl">
         
         {/* Header */}
         <div className="text-center mb-8">
@@ -190,14 +285,8 @@ export default function Onboarding() {
           </p>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between text-sm text-muted-foreground mb-2">
-            <span>Step {currentStep} of {totalSteps}</span>
-            <span>{Math.round((currentStep / totalSteps) * 100)}% complete</span>
-          </div>
-          <Progress value={(currentStep / totalSteps) * 100} className="h-2" data-testid="onboarding-progress" />
-        </div>
+        {/* Enhanced Progress Indicator */}
+        <StepProgressIndicator currentStep={currentStep} totalSteps={totalSteps} />
 
         <form onSubmit={handleSubmit(onSubmit)}>
           
@@ -212,7 +301,10 @@ export default function Onboarding() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Full Name *</Label>
+                  <Label htmlFor="name" className="flex items-center">
+                    Full Name *
+                    <InfoTooltip content="We use your name to personalize your meal plans and create a welcoming experience." />
+                  </Label>
                   <Controller
                     name="name"
                     control={control}
@@ -228,7 +320,10 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <Label htmlFor="email">Email Address *</Label>
+                  <Label htmlFor="email" className="flex items-center">
+                    Email Address *
+                    <InfoTooltip content="Your email helps us save your preferences and send you meal plan updates and grocery reminders." />
+                  </Label>
                   <Controller
                     name="email"
                     control={control}
@@ -245,7 +340,10 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <Label>Cooking Skill Level</Label>
+                  <Label className="flex items-center">
+                    Cooking Skill Level
+                    <InfoTooltip content="This helps us suggest recipes that match your comfort level - from simple 15-minute meals to complex culinary adventures." />
+                  </Label>
                   <Controller
                     name="cookingSkillLevel"
                     control={control}
@@ -278,7 +376,10 @@ export default function Onboarding() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label>Family Size: {watchedValues.familySize} people</Label>
+                  <Label className="flex items-center">
+                    Family Size: {watchedValues.familySize} people
+                    <InfoTooltip content="We adjust portion sizes and grocery quantities to minimize waste and ensure everyone gets fed properly." />
+                  </Label>
                   <Controller
                     name="familySize"
                     control={control}
@@ -297,7 +398,10 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <Label>Weekly Budget: ${watchedValues.weeklyBudget}</Label>
+                  <Label className="flex items-center">
+                    Weekly Budget: ${watchedValues.weeklyBudget}
+                    <InfoTooltip content="This helps us find cost-effective recipes and suggest budget-friendly ingredient substitutions and store deals." />
+                  </Label>
                   <Controller
                     name="weeklyBudget"
                     control={control}
@@ -316,7 +420,10 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <Label>Children's Ages (if any)</Label>
+                  <Label className="flex items-center">
+                    Children's Ages (if any)
+                    <InfoTooltip content="We provide age-appropriate cooking activities and ensure meals are kid-friendly with proper nutrition for growing bodies." />
+                  </Label>
                   <div className="flex space-x-2 mt-2">
                     <Input
                       type="number"
@@ -365,7 +472,10 @@ export default function Onboarding() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label>Dietary Restrictions</Label>
+                  <Label className="flex items-center">
+                    Dietary Restrictions
+                    <InfoTooltip content="This ensures all suggested recipes align with your lifestyle choices and dietary needs, automatically filtering out incompatible options." />
+                  </Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {DIETARY_RESTRICTIONS.map((restriction) => (
                       <div key={restriction} className="flex items-center space-x-2">
@@ -387,7 +497,10 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <Label>Allergies</Label>
+                  <Label className="flex items-center">
+                    Allergies
+                    <InfoTooltip content="Critical for your safety - we'll never suggest recipes containing these ingredients and will flag potential cross-contamination risks." />
+                  </Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {COMMON_ALLERGIES.map((allergy) => (
                       <div key={allergy} className="flex items-center space-x-2">
@@ -409,7 +522,10 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <Label>Medical Conditions (that affect diet)</Label>
+                  <Label className="flex items-center">
+                    Medical Conditions (that affect diet)
+                    <InfoTooltip content="Helps us recommend meals that support your health goals - like low-sodium recipes for hypertension or diabetic-friendly options." />
+                  </Label>
                   <div className="grid grid-cols-1 gap-2 mt-2">
                     {MEDICAL_CONDITIONS.map((condition) => (
                       <div key={condition} className="flex items-center space-x-2">
@@ -443,9 +559,12 @@ export default function Onboarding() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
-                  Select the equipment you have available in your kitchen:
-                </p>
+                <div className="flex items-center mb-4">
+                  <p className="text-muted-foreground">
+                    Select the equipment you have available in your kitchen:
+                  </p>
+                  <InfoTooltip content="We only suggest recipes you can actually make with your available equipment, preventing frustrating ingredient lists you can't use." side="bottom" />
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   {KITCHEN_EQUIPMENT.map((equipment) => (
                     <div key={equipment} className="flex items-center space-x-2">
@@ -479,7 +598,10 @@ export default function Onboarding() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label>Health Goals</Label>
+                  <Label className="flex items-center">
+                    Health Goals
+                    <InfoTooltip content="We'll prioritize recipes that support your specific health objectives, from weight management to heart health and energy optimization." />
+                  </Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {HEALTH_GOALS.map((goal) => (
                       <div key={goal} className="flex items-center space-x-2">
@@ -501,7 +623,10 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <Label>Preferred Cuisines</Label>
+                  <Label className="flex items-center">
+                    Preferred Cuisines
+                    <InfoTooltip content="Helps us suggest meals from cultures and cooking styles you enjoy, ensuring variety while staying within your comfort zone." />
+                  </Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {CUISINES.map((cuisine) => (
                       <div key={cuisine} className="flex items-center space-x-2">
@@ -523,7 +648,10 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <Label>Foods You Dislike</Label>
+                  <Label className="flex items-center">
+                    Foods You Dislike
+                    <InfoTooltip content="We'll avoid these ingredients in your meal plans, or suggest alternatives to make recipes more appealing to your taste preferences." />
+                  </Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {COMMON_DISLIKES.map((dislike) => (
                       <div key={dislike} className="flex items-center space-x-2">
@@ -558,7 +686,10 @@ export default function Onboarding() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label>How much meal prep do you want to do?</Label>
+                  <Label className="flex items-center">
+                    How much meal prep do you want to do?
+                    <InfoTooltip content="Determines whether we suggest quick daily cooking, batch cooking sessions, or full meal prep strategies to match your lifestyle." />
+                  </Label>
                   <Controller
                     name="mealPrepPreference"
                     control={control}
@@ -625,7 +756,8 @@ export default function Onboarding() {
             )}
           </div>
         </form>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
