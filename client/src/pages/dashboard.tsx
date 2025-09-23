@@ -11,7 +11,7 @@ import { NutritionOverview } from "@/components/nutrition-overview";
 import { FeedbackDisplay } from "@/components/feedback/feedback-display";
 import { MealPlanFeedbackForm } from "@/components/feedback/meal-plan-feedback";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Plus, List, PieChart, Baby, Sparkles, Route, ChevronLeft, ChevronRight, DollarSign, Calendar, Clock, Heart, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { MealPlan, ShoppingList, Recipe } from "@shared/schema";
@@ -83,6 +83,59 @@ export default function Dashboard() {
 
   const handleGenerateMealPlan = () => {
     generateMealPlanMutation.mutate();
+  };
+
+  // Meal assignment mutation
+  const assignMealMutation = useMutation({
+    mutationFn: async ({ mealPlanId, day, mealType, recipe }: { 
+      mealPlanId: string; 
+      day: string; 
+      mealType: string; 
+      recipe: Recipe;
+    }) => {
+      // Create a deep copy of the current meal plan
+      const updatedMealPlan = { ...activeMealPlan };
+      const meals = updatedMealPlan.meals as any || {};
+      
+      // Ensure the day exists
+      if (!meals[day]) {
+        meals[day] = {};
+      }
+      
+      // Assign the recipe to the specific meal slot
+      meals[day][mealType] = recipe;
+      
+      const response = await apiRequest("PATCH", `/api/meal-plans/${mealPlanId}`, {
+        meals: meals
+      });
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users', currentUserId, 'meal-plans'] });
+      toast({
+        title: "Meal Added!",
+        description: "Recipe has been added to your meal plan.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to add meal to plan. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleMealAdd = (day: string, mealType: string, recipe: Recipe) => {
+    if (activeMealPlan?.id) {
+      assignMealMutation.mutate({
+        mealPlanId: activeMealPlan.id,
+        day,
+        mealType,
+        recipe
+      });
+    }
   };
 
   const mockWeeklyStats = {
@@ -283,7 +336,11 @@ export default function Dashboard() {
                 </Button>
               </div>
             </div>
-            <MealPlanGrid mealPlan={activeMealPlan} isLoading={mealPlanLoading} />
+            <MealPlanGrid 
+              mealPlan={activeMealPlan} 
+              isLoading={mealPlanLoading} 
+              onMealAdd={handleMealAdd}
+            />
             
             {/* Meal Plan Feedback Section */}
             {activeMealPlan && !mealPlanLoading && (

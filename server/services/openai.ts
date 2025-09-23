@@ -48,6 +48,7 @@ export interface GeneratedRecipe {
   isBatchCookable: boolean;
   isFreezerFriendly: boolean;
   isKidFriendly: boolean;
+  imageUrl?: string;
   tips?: string[];
 }
 
@@ -128,6 +129,7 @@ Return the recipe as a JSON object with the following structure:
   "isBatchCookable": boolean,
   "isFreezerFriendly": boolean,
   "isKidFriendly": boolean,
+  "imageUrl": "optional_image_url",
   "tips": ["tip1", "tip2", ...]
 }`;
 

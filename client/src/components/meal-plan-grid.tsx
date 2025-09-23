@@ -1,17 +1,22 @@
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { RecipePickerModal } from "@/components/recipe-picker-modal";
 import type { Recipe } from "@shared/schema";
 
 interface MealPlanGridProps {
   mealPlan?: any;
   isLoading: boolean;
+  onMealAdd?: (day: string, mealType: string, recipe: Recipe) => void;
 }
 
-export function MealPlanGrid({ mealPlan, isLoading }: MealPlanGridProps) {
+export function MealPlanGrid({ mealPlan, isLoading, onMealAdd }: MealPlanGridProps) {
+  const [recipePickerOpen, setRecipePickerOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<{ day: string; mealType: string } | null>(null);
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const mealTypes = ['breakfast', 'lunch', 'dinner'];
 
@@ -126,6 +131,10 @@ export function MealPlanGrid({ mealPlan, isLoading }: MealPlanGridProps) {
                             variant="ghost" 
                             size="icon"
                             className="h-8 w-8 hover:bg-primary/10"
+                            onClick={() => {
+                              setSelectedSlot({ day: day.toLowerCase(), mealType });
+                              setRecipePickerOpen(true);
+                            }}
                             data-testid={`button-add-meal-${day.toLowerCase()}-${mealType}`}
                           >
                             <Plus className="h-5 w-5 opacity-60" />
@@ -144,6 +153,22 @@ export function MealPlanGrid({ mealPlan, isLoading }: MealPlanGridProps) {
           </div>
         ))}
       </div>
+      
+      {/* Recipe Picker Modal */}
+      {selectedSlot && (
+        <RecipePickerModal
+          open={recipePickerOpen}
+          onOpenChange={setRecipePickerOpen}
+          onRecipeSelect={(recipe) => {
+            if (onMealAdd && selectedSlot) {
+              onMealAdd(selectedSlot.day, selectedSlot.mealType, recipe);
+            }
+            setSelectedSlot(null);
+          }}
+          mealType={selectedSlot.mealType}
+          day={selectedSlot.day.charAt(0).toUpperCase() + selectedSlot.day.slice(1)}
+        />
+      )}
     </div>
   );
 }

@@ -130,7 +130,6 @@ export class MemStorage implements IStorage {
         isBatchCookable: true,
         isFreezerFriendly: true,
         isKidFriendly: true,
-        rating: "4.8",
         imageUrl: "https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5"
       },
       {
@@ -171,7 +170,6 @@ export class MemStorage implements IStorage {
         isBatchCookable: false,
         isFreezerFriendly: false,
         isKidFriendly: true,
-        rating: "4.6",
         imageUrl: "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38"
       }
     ];
@@ -179,6 +177,15 @@ export class MemStorage implements IStorage {
     sampleRecipes.forEach(recipe => {
       this.recipes.set(recipe.id, {
         ...recipe,
+        rating: "4.5",
+        cuisineType: recipe.cuisineType || null,
+        dietaryTags: recipe.dietaryTags || null,
+        imageUrl: recipe.imageUrl || null,
+        imageMetadata: null,
+        estimatedCost: recipe.estimatedCost || null,
+        isBatchCookable: recipe.isBatchCookable || null,
+        isFreezerFriendly: recipe.isFreezerFriendly || null,
+        isKidFriendly: recipe.isKidFriendly || null,
         createdAt: new Date()
       });
     });
@@ -293,6 +300,7 @@ export class MemStorage implements IStorage {
       cuisineType: insertRecipe.cuisineType || null,
       dietaryTags: insertRecipe.dietaryTags || null,
       imageUrl: insertRecipe.imageUrl || null,
+      imageMetadata: insertRecipe.imageMetadata || null,
       estimatedCost: insertRecipe.estimatedCost || null,
       isBatchCookable: insertRecipe.isBatchCookable || null,
       isFreezerFriendly: insertRecipe.isFreezerFriendly || null,
