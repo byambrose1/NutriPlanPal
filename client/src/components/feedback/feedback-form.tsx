@@ -79,11 +79,20 @@ export function FeedbackForm({
       
       // Invalidate relevant queries
       queryClient.invalidateQueries({ 
-        queryKey: [itemType === "recipe" ? "recipes" : "meal-plans"]
+        queryKey: ['/api/recipes']
       });
       queryClient.invalidateQueries({ 
         queryKey: [`/api/${itemType === "recipe" ? "recipes" : "meal-plans"}/${itemId}/feedback`]
       });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/${itemType === "recipe" ? "recipes" : "meal-plans"}/${itemId}/rating`]
+      });
+      // Invalidate user-specific and meal plan queries if needed
+      if (itemType === "meal-plan") {
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/users']
+        });
+      }
       
       onClose?.();
     },
