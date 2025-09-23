@@ -6,7 +6,9 @@ import {
   insertUserProfileSchema, 
   insertRecipeSchema,
   insertMealPlanSchema,
-  insertShoppingListSchema
+  insertShoppingListSchema,
+  insertRecipeFeedbackSchema,
+  insertMealPlanFeedbackSchema
 } from "@shared/schema";
 import { generateRecipe, generateWeeklyMealPlan } from "./services/openai";
 import { compareGroceryPrices, findBestPrices, optimizeShoppingRoute, generateShoppingList } from "./services/grocery-scraper";
@@ -377,6 +379,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const optimizedRoute = await optimizeShoppingRoute(stores);
       res.json(optimizedRoute);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Recipe Feedback
+  app.get("/api/recipes/:id/feedback", async (req, res) => {
+    try {
+      const feedback = await storage.getRecipeFeedback(req.params.id);
+      res.json(feedback);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/recipes/:id/feedback", async (req, res) => {
+    try {
+      const feedbackData = insertRecipeFeedbackSchema.parse({
+        ...req.body,
+        recipeId: req.params.id
+      });
+      
+      // Check if recipe exists
+      const recipe = await storage.getRecipe(req.params.id);
+      if (!recipe) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+      
+      // Check if user already has feedback for this recipe
+      const existingFeedback = await storage.getUserRecipeFeedback(feedbackData.userId, req.params.id);
+      if (existingFeedback) {
+        // Update existing feedback
+        const updatedFeedback = await storage.updateRecipeFeedback(existingFeedback.id, {
+          rating: feedbackData.rating,
+          comment: feedbackData.comment,
+          isLiked: feedbackData.isLiked
+        });
+        return res.json(updatedFeedback);
+      }
+      
+      const feedback = await storage.createRecipeFeedback(feedbackData);
+      res.json(feedback);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/users/:userId/recipes/:recipeId/feedback", async (req, res) => {
+    try {
+      const feedback = await storage.getUserRecipeFeedback(req.params.userId, req.params.recipeId);
+      if (!feedback) {
+        return res.status(404).json({ message: "Feedback not found" });
+      }
+      res.json(feedback);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/feedback/recipes/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      const feedback = await storage.updateRecipeFeedback(req.params.id, updates);
+      if (!feedback) {
+        return res.status(404).json({ message: "Feedback not found" });
+      }
+      res.json(feedback);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/recipes/:id/rating", async (req, res) => {
+    try {
+      const averageRating = await storage.getRecipeAverageRating(req.params.id);
+      res.json({ averageRating });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Meal Plan Feedback
+  app.get("/api/meal-plans/:id/feedback", async (req, res) => {
+    try {
+      const feedback = await storage.getMealPlanFeedback(req.params.id);
+      res.json(feedback);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/meal-plans/:id/feedback", async (req, res) => {
+    try {
+      const feedbackData = insertMealPlanFeedbackSchema.parse({
+        ...req.body,
+        mealPlanId: req.params.id
+      });
+      
+      // Check if meal plan exists
+      const mealPlan = await storage.getMealPlan(req.params.id);
+      if (!mealPlan) {
+        return res.status(404).json({ message: "Meal plan not found" });
+      }
+      
+      // Check if user already has feedback for this meal plan
+      const existingFeedback = await storage.getUserMealPlanFeedback(feedbackData.userId, req.params.id);
+      if (existingFeedback) {
+        // Update existing feedback
+        const updatedFeedback = await storage.updateMealPlanFeedback(existingFeedback.id, {
+          rating: feedbackData.rating,
+          comment: feedbackData.comment,
+          isLiked: feedbackData.isLiked
+        });
+        return res.json(updatedFeedback);
+      }
+      
+      const feedback = await storage.createMealPlanFeedback(feedbackData);
+      res.json(feedback);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/users/:userId/meal-plans/:mealPlanId/feedback", async (req, res) => {
+    try {
+      const feedback = await storage.getUserMealPlanFeedback(req.params.userId, req.params.mealPlanId);
+      if (!feedback) {
+        return res.status(404).json({ message: "Feedback not found" });
+      }
+      res.json(feedback);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/feedback/meal-plans/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      const feedback = await storage.updateMealPlanFeedback(req.params.id, updates);
+      if (!feedback) {
+        return res.status(404).json({ message: "Feedback not found" });
+      }
+      res.json(feedback);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/meal-plans/:id/rating", async (req, res) => {
+    try {
+      const averageRating = await storage.getMealPlanAverageRating(req.params.id);
+      res.json({ averageRating });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
