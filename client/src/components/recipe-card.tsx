@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StarRating } from "@/components/ui/star-rating";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { Clock, Users, DollarSign } from "lucide-react";
 import { Recipe } from "@shared/schema";
 
@@ -20,13 +21,15 @@ export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
     >
       {recipe.imageUrl && (
         <div className="w-full h-48 bg-muted">
-          <img 
+          <OptimizedImage
             src={recipe.imageUrl} 
             alt={recipe.title}
-            className="w-full h-48 object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
+            aspectRatio={16/9}
+            className="w-full h-48"
+            objectFit="cover"
+            loading="lazy"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            data-testid={`recipe-image-${recipe.id}`}
           />
         </div>
       )}
