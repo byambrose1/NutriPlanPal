@@ -1,9 +1,14 @@
 import OpenAI from "openai";
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
-});
+function getOpenAIClient(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY environment variable is required. Please add your OpenAI API key to use recipe and meal plan generation features.");
+  }
+  return new OpenAI({ 
+    apiKey: process.env.OPENAI_API_KEY
+  });
+}
 
 export interface RecipeGenerationParams {
   familySize: number;
