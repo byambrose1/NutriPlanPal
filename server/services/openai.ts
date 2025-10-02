@@ -139,6 +139,7 @@ Return the recipe as a JSON object with the following structure:
 }`;
 
   try {
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: "gpt-5",
       messages: [
@@ -201,6 +202,7 @@ Return as JSON with this structure:
 }`;
 
   try {
+    const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
       model: "gpt-5",
       messages: [
