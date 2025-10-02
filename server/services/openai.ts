@@ -23,6 +23,16 @@ export interface RecipeGenerationParams {
   equipment: string[];
   goals: string[];
   childrenAges?: number[];
+  currency?: string;
+  medicalConditions?: string[];
+  primaryGoal?: string;
+  currentWeight?: number;
+  weightUnit?: string;
+  height?: number;
+  heightUnit?: string;
+  activityLevel?: string;
+  age?: number;
+  gender?: string;
 }
 
 export interface GeneratedRecipe {
@@ -69,6 +79,16 @@ export interface MealPlanParams {
   equipment: string[];
   childrenAges?: number[];
   mealPrepPreference: string;
+  currency?: string;
+  medicalConditions?: string[];
+  primaryGoal?: string;
+  currentWeight?: number;
+  weightUnit?: string;
+  height?: number;
+  heightUnit?: string;
+  activityLevel?: string;
+  age?: number;
+  gender?: string;
 }
 
 export interface WeeklyMealPlan {
@@ -99,15 +119,23 @@ Family size: ${params.familySize} people
 Dietary restrictions: ${params.dietaryRestrictions.join(', ') || 'None'}
 Allergies: ${params.allergies.join(', ') || 'None'}
 Cooking skill level: ${params.cookingSkillLevel}
-Budget per meal: $${(params.weeklyBudget / 21).toFixed(2)}
+Budget per meal: ${params.currency === 'GBP' ? '£' : '$'}${(params.weeklyBudget / 21).toFixed(2)}
 Preferred cuisines: ${params.preferredCuisines.join(', ') || 'Any'}
 Disliked ingredients: ${params.dislikedIngredients.join(', ') || 'None'}
 Available equipment: ${params.equipment.join(', ')}
 Health goals: ${params.goals.join(', ') || 'General health'}
 ${params.childrenAges?.length ? `Children ages: ${params.childrenAges.join(', ')}` : 'No children specified'}
 ${params.prepTimeLimit ? `Maximum prep time: ${params.prepTimeLimit} minutes` : ''}
+${params.medicalConditions?.length ? `Medical conditions: ${params.medicalConditions.join(', ')}` : ''}
+${params.primaryGoal ? `Primary health goal: ${params.primaryGoal.replace('_', ' ')}` : ''}
+${params.age ? `Age: ${params.age} years` : ''}
+${params.gender ? `Gender: ${params.gender}` : ''}
+${params.currentWeight ? `Current weight: ${params.currentWeight} ${params.weightUnit || 'kg'}` : ''}
+${params.height ? `Height: ${params.height} ${params.heightUnit || 'cm'}` : ''}
+${params.activityLevel ? `Activity level: ${params.activityLevel.replace('_', ' ')}` : ''}
+${params.currency ? `Currency: ${params.currency}` : ''}
 
-Create a recipe that is budget-friendly, nutritionally balanced, and suitable for the family. If there are children, make it kid-friendly. Include accurate nutrition information and realistic cost estimates.
+Create a recipe that is budget-friendly, nutritionally balanced, and suitable for the family. If there are children, make it kid-friendly. Consider any medical conditions and adjust nutrition accordingly. If fitness goals are specified, tailor macronutrient ratios appropriately. Include accurate nutrition information and realistic cost estimates.
 
 Return the recipe as a JSON object with the following structure:
 {
@@ -145,7 +173,7 @@ Return the recipe as a JSON object with the following structure:
       messages: [
         {
           role: "system",
-          content: "You are a professional nutritionist and chef specializing in family meal planning. Provide accurate, practical recipes that are budget-conscious and family-friendly."
+          content: "You are a professional nutritionist and chef specializing in family meal planning. Provide accurate, practical recipes that are budget-conscious and family-friendly. Consider medical conditions, fitness goals, and activity levels when applicable to create personalized, health-appropriate meals."
         },
         {
           role: "user",
@@ -168,7 +196,7 @@ export async function generateWeeklyMealPlan(params: MealPlanParams): Promise<We
   const prompt = `Generate a complete weekly meal plan for a family with these specifications:
 
 Family size: ${params.familySize} people
-Weekly budget: $${params.weeklyBudget}
+Weekly budget: ${params.currency === 'GBP' ? '£' : '$'}${params.weeklyBudget}
 Dietary restrictions: ${params.dietaryRestrictions.join(', ') || 'None'}
 Allergies: ${params.allergies.join(', ') || 'None'}
 Cooking skill level: ${params.cookingSkillLevel}
@@ -178,6 +206,14 @@ Disliked ingredients: ${params.dislikedIngredients.join(', ') || 'None'}
 Available equipment: ${params.equipment.join(', ')}
 Meal prep preference: ${params.mealPrepPreference}
 ${params.childrenAges?.length ? `Children ages: ${params.childrenAges.join(', ')}` : 'No children specified'}
+${params.medicalConditions?.length ? `Medical conditions: ${params.medicalConditions.join(', ')}` : ''}
+${params.primaryGoal ? `Primary health goal: ${params.primaryGoal.replace('_', ' ')}` : ''}
+${params.age ? `Age: ${params.age} years` : ''}
+${params.gender ? `Gender: ${params.gender}` : ''}
+${params.currentWeight ? `Current weight: ${params.currentWeight} ${params.weightUnit || 'kg'}` : ''}
+${params.height ? `Height: ${params.height} ${params.heightUnit || 'cm'}` : ''}
+${params.activityLevel ? `Activity level: ${params.activityLevel.replace('_', ' ')}` : ''}
+${params.currency ? `Currency: ${params.currency}` : ''}
 
 Create a balanced weekly meal plan that:
 - Stays within budget
@@ -187,6 +223,8 @@ Create a balanced weekly meal plan that:
 - Considers prep time for busy families
 - Makes use of leftovers efficiently
 - Is kid-friendly if children are present
+- Takes into account medical conditions and adjusts nutrition accordingly
+- Aligns with user's primary health goal and activity level
 
 For each day, provide breakfast, lunch, and dinner. Include detailed recipes with ingredients, instructions, nutrition info, and cost estimates. Also provide weekly shopping tips and batch cooking suggestions.
 
@@ -208,7 +246,7 @@ Return as JSON with this structure:
       messages: [
         {
           role: "system",
-          content: "You are an expert meal planning nutritionist who specializes in creating budget-friendly, family-oriented weekly meal plans. Focus on nutrition, variety, cost-effectiveness, and practical meal preparation."
+          content: "You are an expert meal planning nutritionist who specializes in creating budget-friendly, family-oriented weekly meal plans. Focus on nutrition, variety, cost-effectiveness, and practical meal preparation. Consider all health metrics including medical conditions, fitness goals, activity levels, and individual characteristics when creating plans."
         },
         {
           role: "user",
