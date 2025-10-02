@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, User, Users, DollarSign, UtensilsCrossed, Heart, Target, Check, HelpCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, Users, DollarSign, UtensilsCrossed, Heart, Target, Check, HelpCircle, Activity } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,25 +22,40 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Valid email is required"),
-  familySize: z.number().min(1).max(20),
-  weeklyBudget: z.number().min(10).max(1000),
+  familySize: z.number().min(1, "Family size must be at least 1").max(20, "Family size cannot exceed 20"),
+  currency: z.enum(["USD", "GBP"], { required_error: "Please select a currency" }),
+  weeklyBudget: z.number().min(10, "Weekly budget must be at least 10").max(10000, "Please enter a realistic budget"),
+  numberOfChildren: z.number().min(0).max(20),
+  childrenAges: z.array(z.number()),
   dietaryRestrictions: z.array(z.string()),
   allergies: z.array(z.string()),
+  customAllergies: z.string().optional(),
   medicalConditions: z.array(z.string()),
+  customMedicalConditions: z.string().optional(),
   cookingSkillLevel: z.enum(["beginner", "intermediate", "advanced"]),
   kitchenEquipment: z.array(z.string()),
-  childrenAges: z.array(z.number()),
   goals: z.array(z.string()),
   preferredCuisines: z.array(z.string()),
+  customCuisines: z.string().optional(),
   dislikedIngredients: z.array(z.string()),
+  customDislikes: z.string().optional(),
+  primaryGoal: z.enum(["lose_weight", "gain_weight", "maintain_weight", "improve_health", "other"], { required_error: "Please select your primary goal" }).optional(),
+  currentWeight: z.number().min(1, "Please enter a valid weight").optional(),
+  weightUnit: z.enum(["kg", "lbs"]).optional(),
+  height: z.number().min(1, "Please enter a valid height").optional(),
+  heightUnit: z.enum(["cm", "inches"]).optional(),
+  activityLevel: z.enum(["sedentary", "lightly_active", "moderately_active", "very_active"]).optional(),
+  age: z.number().min(1, "Please enter a valid age").max(120, "Please enter a valid age").optional(),
+  gender: z.enum(["male", "female", "other", "prefer_not_to_say"]).optional(),
   mealPrepPreference: z.enum(["none", "some", "lots"])
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 const DIETARY_RESTRICTIONS = [
-  "vegetarian", "vegan", "gluten-free", "dairy-free", "nut-free", 
-  "low-carb", "keto", "paleo", "mediterranean", "low-sodium"
+  "vegetarian", "vegan", "pescatarian", "carnivore", "halal", "kosher",
+  "gluten-free", "dairy-free", "nut-free", "low-carb", "keto", "paleo", 
+  "mediterranean", "low-sodium"
 ];
 
 const COMMON_ALLERGIES = [
@@ -49,7 +64,7 @@ const COMMON_ALLERGIES = [
 
 const MEDICAL_CONDITIONS = [
   "diabetes", "hypertension", "heart-disease", "high-cholesterol", 
-  "celiac-disease", "ibs", "kidney-disease", "pregnancy"
+  "celiac-disease", "pcos", "ibs", "kidney-disease", "pregnancy"
 ];
 
 const KITCHEN_EQUIPMENT = [
@@ -63,8 +78,9 @@ const HEALTH_GOALS = [
 ];
 
 const CUISINES = [
-  "american", "italian", "mexican", "asian", "indian", "mediterranean", 
-  "french", "thai", "japanese", "greek", "moroccan", "middle-eastern"
+  "african", "caribbean", "south-american", "indian", "japanese", "chinese",
+  "mediterranean", "middle-eastern", "italian", "french", "american", "mexican", 
+  "thai", "greek", "moroccan"
 ];
 
 const COMMON_DISLIKES = [
@@ -78,7 +94,8 @@ const ONBOARDING_STEPS = [
   { id: 3, title: "Health & Diet", icon: Heart, description: "Dietary restrictions and health info" },
   { id: 4, title: "Kitchen Setup", icon: UtensilsCrossed, description: "Available kitchen equipment" },
   { id: 5, title: "Goals & Tastes", icon: Target, description: "Preferences and health goals" },
-  { id: 6, title: "Meal Prep", icon: DollarSign, description: "Meal preparation preferences" }
+  { id: 6, title: "Fitness Goals", icon: Activity, description: "Your fitness and health metrics" },
+  { id: 7, title: "Meal Prep", icon: DollarSign, description: "Meal preparation preferences" }
 ];
 
 // Enhanced Step Progress Indicator Component
@@ -168,22 +185,53 @@ const InfoTooltip = ({ content, side = "top" }: { content: string; side?: "top" 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 6;
+  const totalSteps = 7;
+  const [detectedCurrency, setDetectedCurrency] = useState<"USD" | "GBP">("USD");
+
+  // Detect user location for currency
+  useEffect(() => {
+    const detectLocation = async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        if (data.country_code === 'GB') {
+          setDetectedCurrency('GBP');
+          setValue('currency', 'GBP');
+        } else {
+          setDetectedCurrency('USD');
+          setValue('currency', 'USD');
+        }
+      } catch (error) {
+        console.error('Failed to detect location:', error);
+        setDetectedCurrency('USD');
+        setValue('currency', 'USD');
+      }
+    };
+    detectLocation();
+  }, []);
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       familySize: 4,
+      currency: "USD",
       weeklyBudget: 150,
+      numberOfChildren: 0,
+      childrenAges: [],
       dietaryRestrictions: [],
       allergies: [],
+      customAllergies: "",
       medicalConditions: [],
+      customMedicalConditions: "",
       cookingSkillLevel: "intermediate",
       kitchenEquipment: ["stove", "oven", "microwave"],
-      childrenAges: [],
       goals: [],
       preferredCuisines: [],
+      customCuisines: "",
       dislikedIngredients: [],
+      customDislikes: "",
+      weightUnit: "kg",
+      heightUnit: "cm",
       mealPrepPreference: "some"
     }
   });
@@ -214,23 +262,60 @@ export default function Onboarding() {
       const user = await userResponse.json();
       console.log('User created:', user);
 
+      // Combine checked allergies with custom allergies
+      const allAllergies = [...data.allergies];
+      if (data.customAllergies) {
+        const customAllergiesList = data.customAllergies.split(',').map(a => a.trim()).filter(a => a);
+        allAllergies.push(...customAllergiesList);
+      }
+
+      // Combine checked medical conditions with custom medical conditions
+      const allMedicalConditions = [...data.medicalConditions];
+      if (data.customMedicalConditions) {
+        const customMedicalList = data.customMedicalConditions.split(',').map(c => c.trim()).filter(c => c);
+        allMedicalConditions.push(...customMedicalList);
+      }
+
+      // Combine checked cuisines with custom cuisines
+      const allCuisines = [...data.preferredCuisines];
+      if (data.customCuisines) {
+        const customCuisinesList = data.customCuisines.split(',').map(c => c.trim()).filter(c => c);
+        allCuisines.push(...customCuisinesList);
+      }
+
+      // Combine checked dislikes with custom dislikes
+      const allDislikes = [...data.dislikedIngredients];
+      if (data.customDislikes) {
+        const customDislikesList = data.customDislikes.split(',').map(d => d.trim()).filter(d => d);
+        allDislikes.push(...customDislikesList);
+      }
+
       // Create profile
       console.log('Creating profile...');
       await createProfileMutation.mutateAsync({
         userId: user.id,
         profileData: {
           familySize: data.familySize,
+          currency: data.currency,
           weeklyBudget: data.weeklyBudget.toString(),
+          childrenAges: data.childrenAges,
           dietaryRestrictions: data.dietaryRestrictions,
-          allergies: data.allergies,
-          medicalConditions: data.medicalConditions,
+          allergies: allAllergies,
+          medicalConditions: allMedicalConditions,
           cookingSkillLevel: data.cookingSkillLevel,
           kitchenEquipment: data.kitchenEquipment,
-          childrenAges: data.childrenAges,
           goals: data.goals,
-          preferredCuisines: data.preferredCuisines,
-          dislikedIngredients: data.dislikedIngredients,
-          mealPrepPreference: data.mealPrepPreference
+          preferredCuisines: allCuisines,
+          dislikedIngredients: allDislikes,
+          mealPrepPreference: data.mealPrepPreference,
+          primaryGoal: data.primaryGoal,
+          currentWeight: data.currentWeight?.toString(),
+          weightUnit: data.weightUnit,
+          height: data.height?.toString(),
+          heightUnit: data.heightUnit,
+          activityLevel: data.activityLevel,
+          age: data.age,
+          gender: data.gender
         }
       });
 
@@ -405,64 +490,110 @@ export default function Onboarding() {
 
                 <div>
                   <Label className="flex items-center">
-                    Weekly Budget: ${watchedValues.weeklyBudget}
+                    Currency
+                    <InfoTooltip content="Select your preferred currency for budget tracking and grocery pricing." />
+                  </Label>
+                  <Controller
+                    name="currency"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="mt-2" data-testid="select-currency">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USD">USD ($) - US Dollar</SelectItem>
+                          <SelectItem value="GBP">GBP (£) - British Pound</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.currency && <p className="text-destructive text-sm mt-1">{errors.currency.message}</p>}
+                </div>
+
+                <div>
+                  <Label className="flex items-center">
+                    Weekly Budget ({watchedValues.currency === 'GBP' ? '£' : '$'})
                     <InfoTooltip content="This helps us find cost-effective recipes and suggest budget-friendly ingredient substitutions and store deals." />
                   </Label>
                   <Controller
                     name="weeklyBudget"
                     control={control}
                     render={({ field }) => (
-                      <Slider
-                        value={[field.value]}
-                        onValueChange={(value) => field.onChange(value[0])}
-                        max={500}
-                        min={50}
-                        step={10}
+                      <div className="flex items-center mt-2">
+                        <span className="mr-2 text-muted-foreground">{watchedValues.currency === 'GBP' ? '£' : '$'}</span>
+                        <Input
+                          type="number"
+                          min="10"
+                          max="10000"
+                          step="10"
+                          value={field.value}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          placeholder="Enter weekly budget"
+                          data-testid="input-weekly-budget"
+                        />
+                      </div>
+                    )}
+                  />
+                  {errors.weeklyBudget && <p className="text-destructive text-sm mt-1">{errors.weeklyBudget.message}</p>}
+                </div>
+
+                <div>
+                  <Label className="flex items-center">
+                    How many children live in the household?
+                    <InfoTooltip content="We provide age-appropriate cooking activities and ensure meals are kid-friendly with proper nutrition for growing bodies." />
+                  </Label>
+                  <Controller
+                    name="numberOfChildren"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        type="number"
+                        min="0"
+                        max="20"
+                        value={field.value}
+                        onChange={(e) => {
+                          const count = parseInt(e.target.value) || 0;
+                          field.onChange(count);
+                          // Reset children ages if count is reduced
+                          if (count < watchedValues.childrenAges.length) {
+                            setValue('childrenAges', watchedValues.childrenAges.slice(0, count));
+                          }
+                        }}
+                        placeholder="Number of children"
                         className="mt-2"
-                        data-testid="slider-weekly-budget"
+                        data-testid="input-number-of-children"
                       />
                     )}
                   />
                 </div>
 
-                <div>
-                  <Label className="flex items-center">
-                    Children's Ages (if any)
-                    <InfoTooltip content="We provide age-appropriate cooking activities and ensure meals are kid-friendly with proper nutrition for growing bodies." />
-                  </Label>
-                  <div className="flex space-x-2 mt-2">
-                    <Input
-                      type="number"
-                      placeholder="Add age"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          const age = parseInt((e.target as HTMLInputElement).value);
-                          if (age > 0 && age < 18) {
-                            setValue('childrenAges', [...watchedValues.childrenAges, age]);
-                            (e.target as HTMLInputElement).value = '';
-                          }
-                        }
-                      }}
-                      data-testid="input-child-age"
-                    />
+                {watchedValues.numberOfChildren > 0 && (
+                  <div>
+                    <Label className="mb-2 block">Enter each child's age:</Label>
+                    <div className="space-y-2">
+                      {Array.from({ length: watchedValues.numberOfChildren }).map((_, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Label className="min-w-20">Child {index + 1}:</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="17"
+                            value={watchedValues.childrenAges[index] || ''}
+                            onChange={(e) => {
+                              const newAges = [...watchedValues.childrenAges];
+                              newAges[index] = parseInt(e.target.value) || 0;
+                              setValue('childrenAges', newAges);
+                            }}
+                            placeholder="Age"
+                            data-testid={`input-child-age-${index}`}
+                          />
+                          <span className="text-sm text-muted-foreground">years old</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {watchedValues.childrenAges.map((age, index) => (
-                      <Badge 
-                        key={index} 
-                        variant="secondary"
-                        className="cursor-pointer"
-                        onClick={() => {
-                          setValue('childrenAges', watchedValues.childrenAges.filter((_, i) => i !== index));
-                        }}
-                        data-testid={`badge-child-age-${age}`}
-                      >
-                        {age} years old ×
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -525,6 +656,21 @@ export default function Onboarding() {
                       </div>
                     ))}
                   </div>
+                  <div className="mt-3">
+                    <Label className="text-sm">Other allergies (please specify):</Label>
+                    <Controller
+                      name="customAllergies"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea
+                          {...field}
+                          placeholder="Enter any other allergies separated by commas (e.g., pineapple, kiwi)"
+                          className="mt-1"
+                          data-testid="textarea-custom-allergies"
+                        />
+                      )}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -549,6 +695,21 @@ export default function Onboarding() {
                         <Label className="text-sm capitalize">{condition.replace('-', ' ')}</Label>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-3">
+                    <Label className="text-sm">Other medical conditions (please specify):</Label>
+                    <Controller
+                      name="customMedicalConditions"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea
+                          {...field}
+                          placeholder="Enter any other medical conditions separated by commas"
+                          className="mt-1"
+                          data-testid="textarea-custom-medical"
+                        />
+                      )}
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -647,9 +808,24 @@ export default function Onboarding() {
                           }
                           data-testid={`checkbox-cuisine-${cuisine}`}
                         />
-                        <Label className="text-sm capitalize">{cuisine}</Label>
+                        <Label className="text-sm capitalize">{cuisine.replace('-', ' ')}</Label>
                       </div>
                     ))}
+                  </div>
+                  <div className="mt-3">
+                    <Label className="text-sm">Other cuisines you enjoy (please specify):</Label>
+                    <Controller
+                      name="customCuisines"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea
+                          {...field}
+                          placeholder="Enter any other cuisines separated by commas (e.g., Korean, Vietnamese)"
+                          className="mt-1"
+                          data-testid="textarea-custom-cuisines"
+                        />
+                      )}
+                    />
                   </div>
                 </div>
 
@@ -676,13 +852,229 @@ export default function Onboarding() {
                       </div>
                     ))}
                   </div>
+                  <div className="mt-3">
+                    <Label className="text-sm">Other foods you dislike (please specify):</Label>
+                    <Controller
+                      name="customDislikes"
+                      control={control}
+                      render={({ field }) => (
+                        <Textarea
+                          {...field}
+                          placeholder="Enter any other foods you dislike separated by commas"
+                          className="mt-1"
+                          data-testid="textarea-custom-dislikes"
+                        />
+                      )}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Step 6: Meal Prep Preferences */}
+          {/* Step 6: Fitness Goals */}
           {currentStep === 6 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Activity className="mr-2 h-5 w-5 text-primary" />
+                  Fitness Goals & Health Metrics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label className="flex items-center">
+                    Primary Goal (Optional)
+                    <InfoTooltip content="Understanding your primary health goal helps us tailor meal plans to support your specific objectives, whether it's weight management or general wellness." />
+                  </Label>
+                  <Controller
+                    name="primaryGoal"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="mt-2" data-testid="select-primary-goal">
+                          <SelectValue placeholder="Select your primary goal" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="lose_weight">Lose weight</SelectItem>
+                          <SelectItem value="gain_weight">Gain weight</SelectItem>
+                          <SelectItem value="maintain_weight">Maintain weight</SelectItem>
+                          <SelectItem value="improve_health">Improve health</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.primaryGoal && <p className="text-destructive text-sm mt-1">{errors.primaryGoal.message}</p>}
+                </div>
+
+                {watchedValues.primaryGoal && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="flex items-center">
+                          Current Weight (Optional)
+                          <InfoTooltip content="Your weight helps us calculate appropriate calorie targets and portion sizes for your goals." />
+                        </Label>
+                        <div className="flex gap-2 mt-2">
+                          <Controller
+                            name="currentWeight"
+                            control={control}
+                            render={({ field }) => (
+                              <Input
+                                type="number"
+                                min="1"
+                                step="0.1"
+                                value={field.value || ''}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                placeholder="Enter weight"
+                                data-testid="input-current-weight"
+                              />
+                            )}
+                          />
+                          <Controller
+                            name="weightUnit"
+                            control={control}
+                            render={({ field }) => (
+                              <Select value={field.value} onValueChange={field.onChange}>
+                                <SelectTrigger className="w-24" data-testid="select-weight-unit">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="kg">kg</SelectItem>
+                                  <SelectItem value="lbs">lbs</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </div>
+                        {errors.currentWeight && <p className="text-destructive text-sm mt-1">{errors.currentWeight.message}</p>}
+                      </div>
+
+                      <div>
+                        <Label className="flex items-center">
+                          Height (Optional)
+                          <InfoTooltip content="Height is used along with weight and activity level to calculate your daily caloric needs accurately." />
+                        </Label>
+                        <div className="flex gap-2 mt-2">
+                          <Controller
+                            name="height"
+                            control={control}
+                            render={({ field }) => (
+                              <Input
+                                type="number"
+                                min="1"
+                                step="0.1"
+                                value={field.value || ''}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                placeholder="Enter height"
+                                data-testid="input-height"
+                              />
+                            )}
+                          />
+                          <Controller
+                            name="heightUnit"
+                            control={control}
+                            render={({ field }) => (
+                              <Select value={field.value} onValueChange={field.onChange}>
+                                <SelectTrigger className="w-28" data-testid="select-height-unit">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="cm">cm</SelectItem>
+                                  <SelectItem value="inches">inches</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </div>
+                        {errors.height && <p className="text-destructive text-sm mt-1">{errors.height.message}</p>}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="flex items-center">
+                          Age (Optional)
+                          <InfoTooltip content="Age factors into calculating your basal metabolic rate and nutritional requirements." />
+                        </Label>
+                        <Controller
+                          name="age"
+                          control={control}
+                          render={({ field }) => (
+                            <Input
+                              type="number"
+                              min="1"
+                              max="120"
+                              value={field.value || ''}
+                              onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              placeholder="Enter your age"
+                              className="mt-2"
+                              data-testid="input-age"
+                            />
+                          )}
+                        />
+                        {errors.age && <p className="text-destructive text-sm mt-1">{errors.age.message}</p>}
+                      </div>
+
+                      <div>
+                        <Label className="flex items-center">
+                          Gender (Optional)
+                          <InfoTooltip content="Gender helps us calculate more accurate caloric and nutritional recommendations based on metabolic differences." />
+                        </Label>
+                        <Controller
+                          name="gender"
+                          control={control}
+                          render={({ field }) => (
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger className="mt-2" data-testid="select-gender">
+                                <SelectValue placeholder="Select gender" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="male">Male</SelectItem>
+                                <SelectItem value="female">Female</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                                <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {errors.gender && <p className="text-destructive text-sm mt-1">{errors.gender.message}</p>}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="flex items-center">
+                        Activity Level (Optional)
+                        <InfoTooltip content="Your activity level helps us determine your total daily energy expenditure and adjust portion sizes accordingly." />
+                      </Label>
+                      <Controller
+                        name="activityLevel"
+                        control={control}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger className="mt-2" data-testid="select-activity-level">
+                              <SelectValue placeholder="Select your activity level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="sedentary">Sedentary - Little or no exercise</SelectItem>
+                              <SelectItem value="lightly_active">Lightly active - Exercise 1-3 days/week</SelectItem>
+                              <SelectItem value="moderately_active">Moderately active - Exercise 3-5 days/week</SelectItem>
+                              <SelectItem value="very_active">Very active - Exercise 6-7 days/week</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.activityLevel && <p className="text-destructive text-sm mt-1">{errors.activityLevel.message}</p>}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Step 7: Meal Prep Preferences */}
+          {currentStep === 7 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">

@@ -36,18 +36,36 @@ export const users = pgTable("users", {
 export const userProfiles = pgTable("user_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Family & Budget
   familySize: integer("family_size").notNull(),
   weeklyBudget: decimal("weekly_budget", { precision: 10, scale: 2 }).notNull(),
-  dietaryRestrictions: text("dietary_restrictions").array(),
-  allergies: text("allergies").array(),
-  medicalConditions: text("medical_conditions").array(),
+  currency: text("currency").notNull().default('USD'), // GBP or USD
+  childrenAges: integer("children_ages").array(),
+  
+  // Dietary Info
+  dietaryRestrictions: text("dietary_restrictions").array(), // vegetarian, vegan, pescatarian, carnivore, halal, kosher, gluten-free, dairy-free
+  allergies: text("allergies").array(), // nuts, shellfish, soy, eggs, etc.
+  medicalConditions: text("medical_conditions").array(), // diabetes, PCOS, IBS, celiac, hypertension, etc.
+  dislikedIngredients: text("disliked_ingredients").array(),
+  
+  // Cooking Preferences
   cookingSkillLevel: text("cooking_skill_level").notNull(), // beginner, intermediate, advanced
   kitchenEquipment: text("kitchen_equipment").array(),
-  childrenAges: integer("children_ages").array(),
-  goals: text("goals").array(), // weight_loss, muscle_gain, healthy_eating, etc.
-  preferredCuisines: text("preferred_cuisines").array(),
-  dislikedIngredients: text("disliked_ingredients").array(),
+  preferredCuisines: text("preferred_cuisines").array(), // african, caribbean, south_american, indian, japanese, chinese, mediterranean, middle_eastern, italian, french, other
   mealPrepPreference: text("meal_prep_preference").notNull(), // none, some, lots
+  
+  // Fitness & Health Goals
+  primaryGoal: text("primary_goal"), // lose_weight, gain_weight, maintain_weight, improve_health, other
+  currentWeight: decimal("current_weight", { precision: 6, scale: 2 }), // in kg or lbs
+  weightUnit: text("weight_unit").default('kg'), // kg or lbs
+  height: decimal("height", { precision: 6, scale: 2 }), // in cm or inches
+  heightUnit: text("height_unit").default('cm'), // cm or inches
+  activityLevel: text("activity_level"), // sedentary, lightly_active, moderately_active, very_active
+  age: integer("age"),
+  gender: text("gender"), // male, female, other, prefer_not_to_say
+  
+  goals: text("goals").array(), // weight_loss, muscle_gain, healthy_eating, etc. (legacy field)
 });
 
 export const recipes = pgTable("recipes", {
