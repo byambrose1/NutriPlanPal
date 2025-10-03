@@ -238,25 +238,25 @@ export default function Onboarding() {
 
   const createHouseholdMutation = useMutation({
     mutationFn: async (householdData: any) => {
-      return await apiRequest('/api/households', 'POST', householdData);
+      return await apiRequest('POST', '/api/households', householdData);
     }
   });
 
   const createMemberMutation = useMutation({
     mutationFn: async ({ householdId, memberData }: { householdId: string; memberData: any }) => {
-      return await apiRequest(`/api/households/${householdId}/members`, 'POST', memberData);
+      return await apiRequest('POST', `/api/households/${householdId}/members`, memberData);
     }
   });
 
   const createPreferencesMutation = useMutation({
     mutationFn: async ({ householdId, preferencesData }: { householdId: string; preferencesData: any }) => {
-      return await apiRequest(`/api/households/${householdId}/preferences`, 'POST', preferencesData);
+      return await apiRequest('POST', `/api/households/${householdId}/preferences`, preferencesData);
     }
   });
 
   const createNotificationsMutation = useMutation({
     mutationFn: async (notificationData: any) => {
-      return await apiRequest('/api/notification-preferences', 'POST', notificationData);
+      return await apiRequest('POST', '/api/notification-preferences', notificationData);
     }
   });
 
