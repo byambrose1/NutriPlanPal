@@ -21,18 +21,18 @@ export default function Dashboard() {
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
   // Fetch household
-  const { data: household, isLoading: householdLoading } = useQuery({
+  const { data: household, isLoading: householdLoading } = useQuery<any>({
     queryKey: ["/api/households/me"],
   });
 
   // Fetch household members
-  const { data: members = [], isLoading: membersLoading } = useQuery({
+  const { data: members = [], isLoading: membersLoading } = useQuery<any[]>({
     queryKey: ["/api/households", household?.id, "members"],
     enabled: !!household?.id,
   });
 
   // Fetch household preferences
-  const { data: preferences } = useQuery({
+  const { data: preferences } = useQuery<any>({
     queryKey: ["/api/households", household?.id, "preferences"],
     enabled: !!household?.id,
   });
@@ -43,19 +43,19 @@ export default function Dashboard() {
     : members[0];
 
   // Fetch active meal plan for selected member
-  const { data: activeMealPlan, isLoading: mealPlanLoading } = useQuery({
+  const { data: activeMealPlan, isLoading: mealPlanLoading } = useQuery<any>({
     queryKey: ["/api/members", currentMember?.id, "meal-plans", "active"],
     enabled: !!currentMember?.id,
   });
 
   // Fetch shopping list for household
-  const { data: shoppingList } = useQuery({
+  const { data: shoppingList } = useQuery<any>({
     queryKey: ["/api/households", household?.id, "shopping-lists", "active"],
     enabled: !!household?.id,
   });
 
   // Fetch recipes
-  const { data: recipes = [] } = useQuery({
+  const { data: recipes = [] } = useQuery<any[]>({
     queryKey: ["/api/recipes"],
   });
 
@@ -174,7 +174,7 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex-1">
                 <h2 className="text-2xl font-bold mb-2" data-testid="greeting">
-                  Welcome back, {user?.firstName}!
+                  Welcome back, {(user as any)?.firstName || "there"}!
                 </h2>
                 <p className="text-white/90 mb-4">
                   Ready to plan healthy meals for your family?
