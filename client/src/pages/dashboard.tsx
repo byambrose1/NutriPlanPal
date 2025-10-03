@@ -1,507 +1,462 @@
 import { useState } from "react";
-import { Navigation } from "@/components/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { RecipeCard } from "@/components/recipe-card";
-import { MealPlanGrid } from "@/components/meal-plan-grid";
-import { NutritionOverview } from "@/components/nutrition-overview";
-import { FeedbackDisplay } from "@/components/feedback/feedback-display";
-import { MealPlanFeedbackForm } from "@/components/feedback/meal-plan-feedback";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, List, PieChart, Baby, Sparkles, Route, ChevronLeft, ChevronRight, DollarSign, Calendar, Clock, Heart, MessageSquare } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { MealPlan, ShoppingList, Recipe } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Users, Sparkles, ShoppingCart, Plus, LogOut, Settings,
+  DollarSign, Clock, Heart, ChefHat
+} from "lucide-react";
 
 export default function Dashboard() {
-  // Mock user data - in production this would come from authentication
-  const currentUserId = "user-1";
-  const [showMealPlanFeedback, setShowMealPlanFeedback] = useState(false);
+  const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
 
-  // Fetch active meal plan
-  const { data: activeMealPlan, isLoading: mealPlanLoading } = useQuery<MealPlan | null>({
-    queryKey: ['/api/users', currentUserId, 'meal-plans', 'active'],
-    enabled: !!currentUserId
+  // Fetch household
+  const { data: household, isLoading: householdLoading } = useQuery({
+    queryKey: ["/api/households/me"],
   });
 
-  // Fetch active shopping list
-  const { data: activeShoppingList } = useQuery<ShoppingList | null>({
-    queryKey: ['/api/users', currentUserId, 'shopping-lists', 'active'],
-    enabled: !!currentUserId
+  // Fetch household members
+  const { data: members = [], isLoading: membersLoading } = useQuery({
+    queryKey: ["/api/households", household?.id, "members"],
+    enabled: !!household?.id,
   });
 
-  // Fetch recommended recipes
-  const { data: recipes = [] } = useQuery<Recipe[]>({
-    queryKey: ['/api/recipes'],
+  // Fetch household preferences
+  const { data: preferences } = useQuery({
+    queryKey: ["/api/households", household?.id, "preferences"],
+    enabled: !!household?.id,
+  });
+
+  // Set default selected member (first member)
+  const currentMember = selectedMemberId 
+    ? members.find((m: any) => m.id === selectedMemberId)
+    : members[0];
+
+  // Fetch active meal plan for selected member
+  const { data: activeMealPlan, isLoading: mealPlanLoading } = useQuery({
+    queryKey: ["/api/members", currentMember?.id, "meal-plans", "active"],
+    enabled: !!currentMember?.id,
+  });
+
+  // Fetch shopping list for household
+  const { data: shoppingList } = useQuery({
+    queryKey: ["/api/households", household?.id, "shopping-lists", "active"],
+    enabled: !!household?.id,
+  });
+
+  // Fetch recipes
+  const { data: recipes = [] } = useQuery({
+    queryKey: ["/api/recipes"],
   });
 
   // Generate meal plan mutation
   const generateMealPlanMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch(`/api/users/${currentUserId}/meal-plans/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          familySize: 4,
-          weeklyBudget: 150,
-          dietaryRestrictions: [],
-          allergies: [],
-          cookingSkillLevel: 'intermediate',
-          goals: ['healthy_eating'],
-          preferredCuisines: ['american', 'italian', 'mexican'],
-          dislikedIngredients: [],
-          equipment: ['stove', 'oven', 'microwave'],
-          childrenAges: [8, 12],
-          mealPrepPreference: 'some'
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to generate meal plan');
-      }
-      
-      return response.json();
+    mutationFn: async (memberId: string) => {
+      return await apiRequest(`/api/members/${memberId}/meal-plans/generate`, "POST");
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', currentUserId, 'meal-plans'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/members"] });
       toast({
         title: "Meal Plan Generated!",
         description: "Your personalized weekly meal plan is ready.",
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to generate meal plan. Please try again.",
         variant: "destructive",
       });
-    }
+    },
+  });
+
+  // Generate shopping list mutation
+  const generateShoppingListMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest(`/api/households/${household?.id}/shopping-lists/generate`, "POST");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/households", household?.id, "shopping-lists"] });
+      toast({
+        title: "Shopping List Created!",
+        description: "Your merged shopping list is ready with ingredients from all members.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to generate shopping list. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleGenerateMealPlan = () => {
-    generateMealPlanMutation.mutate();
-  };
-
-  // Meal assignment mutation
-  const assignMealMutation = useMutation({
-    mutationFn: async ({ mealPlanId, day, mealType, recipe }: { 
-      mealPlanId: string; 
-      day: string; 
-      mealType: string; 
-      recipe: Recipe;
-    }) => {
-      // Create a deep copy of the current meal plan
-      const updatedMealPlan = { ...activeMealPlan };
-      const meals = updatedMealPlan.meals as any || {};
-      
-      // Ensure the day exists
-      if (!meals[day]) {
-        meals[day] = {};
-      }
-      
-      // Assign the recipe to the specific meal slot
-      meals[day][mealType] = recipe;
-      
-      const response = await apiRequest("PATCH", `/api/meal-plans/${mealPlanId}`, {
-        meals: meals
-      });
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', currentUserId, 'meal-plans'] });
-      toast({
-        title: "Meal Added!",
-        description: "Recipe has been added to your meal plan.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to add meal to plan. Please try again.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const handleMealAdd = (day: string, mealType: string, recipe: Recipe) => {
-    if (activeMealPlan?.id) {
-      assignMealMutation.mutate({
-        mealPlanId: activeMealPlan.id,
-        day,
-        mealType,
-        recipe
-      });
+    if (currentMember?.id) {
+      generateMealPlanMutation.mutate(currentMember.id);
     }
   };
 
-  const mockWeeklyStats = {
-    budgetSpent: 127,
-    budgetTotal: 150,
-    mealsPlanned: 18,
-    totalMeals: 21,
-    prepTimeSaved: "4.5h",
-    familyRating: 4.8
+  const handleGenerateShoppingList = () => {
+    generateShoppingListMutation.mutate();
   };
 
-  const mockNutritionData = {
-    calories: { current: 1330, target: 1800 },
-    protein: { current: 98, target: 120 },
-    fiber: { current: 19, target: 30 },
-    carbs: { current: 165, target: 225 },
-    fat: { current: 52, target: 60 }
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
   };
 
-  const mockShoppingItems = [
-    { id: 1, name: "Organic Chicken Breast", completed: false, price: 8.99, store: "Whole Foods" },
-    { id: 2, name: "Quinoa (2 cups)", completed: false, price: 6.49, store: "Target" },
-    { id: 3, name: "Baby Spinach", completed: true, price: 3.99, store: "Kroger" },
-    { id: 4, name: "Bell Peppers (3)", completed: false, price: 4.97, store: "Walmart" },
-    { id: 5, name: "Rolled Oats", completed: false, price: 2.49, store: "Aldi" }
-  ];
+  // Redirect to onboarding if no household
+  if (!householdLoading && !household) {
+    setLocation("/onboarding");
+    return null;
+  }
+
+  if (householdLoading || membersLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-gray-900 dark:to-gray-800">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background mb-16 md:mb-0">
-      <Navigation />
-      
-      <main className="container mx-auto px-4 py-6 space-y-8">
-        
-        {/* Welcome Section */}
-        <section className="bg-gradient-to-r from-primary to-secondary rounded-xl p-6 text-white">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="space-y-2 mb-4 md:mb-0">
-              <h2 className="text-2xl font-bold" data-testid="greeting">Good morning, Sarah!</h2>
-              <p className="text-white/90">Ready to plan some delicious and healthy meals for your family?</p>
-              <div className="flex items-center space-x-4 mt-3">
-                <div className="bg-white/20 rounded-lg px-3 py-1">
-                  <span className="text-sm font-medium" data-testid="family-size">Family of 4</span>
-                </div>
-                <div className="bg-white/20 rounded-lg px-3 py-1">
-                  <span className="text-sm font-medium" data-testid="budget-display">Budget: $150/week</span>
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Header */}
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <ChefHat className="w-8 h-8 text-orange-500" />
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  NutriPlanPal
+                </h1>
+              </div>
+              <Separator orientation="vertical" className="h-8" />
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {household?.name || "Your Household"}
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  {household?.currency} {household?.weeklyBudget}/week
+                </p>
               </div>
             </div>
-            <Button 
-              className="bg-white text-primary hover:bg-white/90 font-semibold"
-              onClick={handleGenerateMealPlan}
-              disabled={generateMealPlanMutation.isPending}
-              data-testid="button-generate-meal-plan"
-            >
-              {generateMealPlanMutation.isPending ? (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate New Meal Plan
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => setLocation("/profile")} data-testid="button-settings">
+                <Settings className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleLogout} data-testid="button-logout">
+                <LogOut className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
-        </section>
+        </div>
+      </header>
 
-        {/* Weekly Overview Stats */}
-        <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm">This Week's Budget</p>
-                  <p className="text-2xl font-bold text-foreground" data-testid="budget-spent">${mockWeeklyStats.budgetSpent}</p>
-                  <p className="text-secondary text-sm">of ${mockWeeklyStats.budgetTotal}</p>
-                </div>
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <DollarSign className="text-primary text-xl" />
-                </div>
-              </div>
-              <div className="mt-3">
-                <Progress value={(mockWeeklyStats.budgetSpent / mockWeeklyStats.budgetTotal) * 100} className="h-2" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm">Meals Planned</p>
-                  <p className="text-2xl font-bold text-foreground" data-testid="meals-planned">{mockWeeklyStats.mealsPlanned}</p>
-                  <p className="text-secondary text-sm">of {mockWeeklyStats.totalMeals} meals</p>
-                </div>
-                <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
-                  <Calendar className="text-secondary text-xl" />
-                </div>
-              </div>
-              <div className="mt-3">
-                <Progress value={(mockWeeklyStats.mealsPlanned / mockWeeklyStats.totalMeals) * 100} className="h-2" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm">Prep Time Saved</p>
-                  <p className="text-2xl font-bold text-foreground" data-testid="prep-time-saved">{mockWeeklyStats.prepTimeSaved}</p>
-                  <p className="text-accent text-sm">batch cooking</p>
-                </div>
-                <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
-                  <Clock className="text-accent text-xl" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm">Family Rating</p>
-                  <p className="text-2xl font-bold text-foreground" data-testid="family-rating">{mockWeeklyStats.familyRating}</p>
-                  <div className="flex text-accent text-sm">
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i}>⭐</span>
-                    ))}
-                  </div>
-                </div>
-                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                  <Heart className="text-red-500 text-xl" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Quick Actions */}
-        <Card>
+      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        {/* Welcome Section with Profile Switcher */}
+        <Card className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white border-0 shadow-xl">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button
-                variant="outline"
-                className="flex flex-col items-center p-4 h-auto border-2 border-dashed hover:border-primary hover:bg-primary/5"
-                data-testid="button-add-recipe"
-              >
-                <Plus className="text-primary text-2xl mb-2" />
-                <span className="text-sm font-medium">Add Recipe</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex flex-col items-center p-4 h-auto border-2 border-dashed hover:border-secondary hover:bg-secondary/5"
-                data-testid="button-shopping-list"
-              >
-                <List className="text-secondary text-2xl mb-2" />
-                <span className="text-sm font-medium">Shopping List</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex flex-col items-center p-4 h-auto border-2 border-dashed hover:border-accent hover:bg-accent/5"
-                data-testid="button-nutrition-stats"
-              >
-                <PieChart className="text-accent text-2xl mb-2" />
-                <span className="text-sm font-medium">Nutrition Stats</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex flex-col items-center p-4 h-auto border-2 border-dashed hover:border-purple-500 hover:bg-purple-50"
-                data-testid="button-kids-corner"
-              >
-                <Baby className="text-purple-500 text-2xl mb-2" />
-                <span className="text-sm font-medium">Kids' Corner</span>
-              </Button>
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold mb-2" data-testid="greeting">
+                  Welcome back, {user?.firstName}!
+                </h2>
+                <p className="text-white/90 mb-4">
+                  Ready to plan healthy meals for your family?
+                </p>
+                
+                {/* Profile Switcher */}
+                {members.length > 0 && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium">Viewing plan for:</span>
+                    <Select 
+                      value={currentMember?.id || members[0]?.id} 
+                      onValueChange={setSelectedMemberId}
+                    >
+                      <SelectTrigger className="w-48 bg-white/20 border-white/30 text-white" data-testid="select-member">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {members.map((member: any) => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name} {member.nickname && `(${member.nickname})`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                      onClick={() => setLocation("/onboarding")}
+                      data-testid="button-add-member"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Member
+                    </Button>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button 
+                  className="bg-white text-orange-600 hover:bg-white/90 font-semibold"
+                  onClick={handleGenerateMealPlan}
+                  disabled={generateMealPlanMutation.isPending || !currentMember}
+                  data-testid="button-generate-meal-plan"
+                >
+                  {generateMealPlanMutation.isPending ? (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate Meal Plan
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="bg-white/20 border-white/30 text-white hover:bg-white/30"
+                  onClick={handleGenerateShoppingList}
+                  disabled={generateShoppingListMutation.isPending}
+                  data-testid="button-generate-shopping"
+                >
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Create Shopping List
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Weekly Meal Plan Grid */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold">This Week's Meal Plan</h3>
-              <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="icon" data-testid="button-prev-week">
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium px-3 py-1 bg-muted rounded-md" data-testid="week-range">
-                  Dec 11-17, 2023
-                </span>
-                <Button variant="ghost" size="icon" data-testid="button-next-week">
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <MealPlanGrid 
-              mealPlan={activeMealPlan} 
-              isLoading={mealPlanLoading} 
-              onMealAdd={handleMealAdd}
-            />
-            
-            {/* Meal Plan Feedback Section */}
-            {activeMealPlan && !mealPlanLoading && (
-              <>
-                <Separator className="my-6" />
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      Meal Plan Feedback
-                    </h4>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowMealPlanFeedback(!showMealPlanFeedback)}
-                      data-testid="button-rate-meal-plan"
-                    >
-                      {showMealPlanFeedback ? "Cancel" : "Rate Meal Plan"}
-                    </Button>
+        {/* Member Profile Card */}
+        {currentMember && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-orange-500" />
+                {currentMember.name}'s Profile
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Primary Goal</p>
+                  <p className="font-medium capitalize">
+                    {currentMember.primaryGoal?.replace(/_/g, " ") || "Not set"}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Activity Level</p>
+                  <p className="font-medium capitalize">
+                    {currentMember.activityLevel?.replace(/_/g, " ") || "Not set"}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Dietary Preferences</p>
+                  <div className="flex flex-wrap gap-1">
+                    {currentMember.dietaryRestrictions && currentMember.dietaryRestrictions.length > 0 ? (
+                      currentMember.dietaryRestrictions.map((diet: string) => (
+                        <Badge key={diet} variant="secondary" className="text-xs capitalize">
+                          {diet.replace(/_/g, " ")}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-gray-400">None</span>
+                    )}
                   </div>
+                </div>
+              </div>
+              {currentMember.allergies && currentMember.allergies.length > 0 && (
+                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200 mb-1">⚠️ Allergies</p>
+                  <div className="flex flex-wrap gap-1">
+                    {currentMember.allergies.map((allergy: string) => (
+                      <Badge key={allergy} variant="destructive" className="text-xs">
+                        {allergy}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-                  {showMealPlanFeedback ? (
-                    <MealPlanFeedbackForm
-                      mealPlan={activeMealPlan}
-                      userId={currentUserId}
-                      onClose={() => setShowMealPlanFeedback(false)}
-                    />
-                  ) : (
-                    <FeedbackDisplay
-                      itemId={activeMealPlan.id}
-                      itemType="meal-plan"
-                    />
+        {/* Weekly Meal Plan */}
+        <Card>
+          <CardHeader>
+            <CardTitle>This Week's Meal Plan</CardTitle>
+            <CardDescription>
+              {currentMember ? `Personalized for ${currentMember.name}` : "Select a member to view their meal plan"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {mealPlanLoading ? (
+              <div className="text-center py-12">
+                <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading meal plan...</p>
+              </div>
+            ) : activeMealPlan ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg">
+                  <div>
+                    <p className="font-medium text-green-900 dark:text-green-100">Active Meal Plan</p>
+                    <p className="text-sm text-green-700 dark:text-green-300">
+                      Week of {new Date(activeMealPlan.weekStartDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {activeMealPlan.totalCalories && (
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+                        {activeMealPlan.totalCalories.toLocaleString()}
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300">calories/week</p>
+                    </div>
                   )}
                 </div>
-              </>
+
+                {/* Display meals */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries((activeMealPlan.meals as any) || {}).map(([day, meals]: [string, any]) => (
+                    <Card key={day} className="border-2">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base capitalize">{day}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {Object.entries(meals || {}).map(([mealType, meal]: [string, any]) => (
+                          <div key={mealType} className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 capitalize">
+                              {mealType}
+                            </p>
+                            <p className="text-sm font-medium">{meal?.title || "Not planned"}</p>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Sparkles className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Meal Plan Yet</h3>
+                <p className="text-gray-500 mb-4">
+                  Generate a personalized meal plan to get started
+                </p>
+                <Button onClick={handleGenerateMealPlan} disabled={!currentMember} data-testid="button-create-first-plan">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Create My First Plan
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Today's Nutrition & Shopping List */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <NutritionOverview nutritionData={mockNutritionData} />
-          </div>
-
-          {/* Shopping List Preview */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Shopping List</h3>
-                <Button variant="link" className="text-primary hover:text-primary/80 text-sm font-medium p-0" data-testid="button-view-all-shopping">
-                  View All
+        {/* Shopping List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Household Shopping List</CardTitle>
+            <CardDescription>
+              Combined ingredients from all family members' meal plans
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {shoppingList ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Week of {new Date(shoppingList.weekStartDate).toLocaleDateString()}</p>
+                    {shoppingList.totalEstimatedCost && (
+                      <p className="text-sm text-gray-500">
+                        Estimated: {household?.currency} {shoppingList.totalEstimatedCost}
+                      </p>
+                    )}
+                  </div>
+                  <Badge variant="outline">{(shoppingList.items as any[])?.length || 0} items</Badge>
+                </div>
+                <Separator />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+                  {((shoppingList.items as any[]) || []).map((item: any, index: number) => (
+                    <div key={index} className="flex items-center gap-2 p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <div className="flex-1">
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-sm text-gray-500">
+                          {item.amount} {item.unit}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <ShoppingCart className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Shopping List</h3>
+                <p className="text-gray-500 mb-4">
+                  Generate a shopping list from your household's meal plans
+                </p>
+                <Button onClick={handleGenerateShoppingList} data-testid="button-create-shopping-list">
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Create Shopping List
                 </Button>
               </div>
+            )}
+          </CardContent>
+        </Card>
 
-              <div className="space-y-3">
-                {mockShoppingItems.slice(0, 5).map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-2 hover:bg-muted/50 rounded-md transition-colors" data-testid={`shopping-item-${item.id}`}>
-                    <div className="flex items-center space-x-3">
-                      <Checkbox checked={item.completed} />
-                      <span className={`text-sm ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
-                        {item.name}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <div className={`text-sm font-medium ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
-                        ${item.price}
-                      </div>
-                      <div className="text-xs text-secondary">{item.store}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Total Estimated:</span>
-                  <span className="font-bold text-lg" data-testid="shopping-total">$127.43</span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">Based on best local prices</div>
-              </div>
-
-              <Button className="w-full mt-4 bg-secondary hover:bg-secondary/90 text-secondary-foreground" data-testid="button-optimize-route">
-                <Route className="mr-2 h-4 w-4" />
-                Optimize Shopping Route
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recommended Recipes Section */}
+        {/* Recommended Recipes */}
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold">Recommended for Your Family</h3>
-              <Button variant="link" className="text-primary hover:text-primary/80 text-sm font-medium p-0" data-testid="button-view-all-recipes">
-                View All Recipes
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recipes.slice(0, 3).map((recipe) => (
-                <RecipeCard key={recipe.id} recipe={recipe} />
+          <CardHeader>
+            <CardTitle>Recommended Recipes</CardTitle>
+            <CardDescription>Based on your preferences</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recipes.slice(0, 3).map((recipe: any) => (
+                <Card key={recipe.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  {recipe.imageUrl && (
+                    <div className="h-48 bg-gradient-to-br from-orange-100 to-yellow-100 dark:from-orange-900/30 dark:to-yellow-900/30">
+                      <img 
+                        src={recipe.imageUrl} 
+                        alt={recipe.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2">{recipe.title}</h3>
+                    <p className="text-sm text-gray-500 line-clamp-2 mb-3">{recipe.description}</p>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {recipe.prepTime + recipe.cookTime} min
+                      </span>
+                      <span>{recipe.servings} servings</span>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </CardContent>
         </Card>
-
-        {/* Family Cooking Tips & Kids Corner */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-6">
-            <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center mr-3">
-                <Baby className="text-white text-lg" />
-              </div>
-              <h3 className="text-lg font-semibold">Kids' Cooking Corner</h3>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="bg-white/60 rounded-lg p-4">
-                <h4 className="font-medium text-purple-900 mb-2">This Week's Activity</h4>
-                <p className="text-sm text-purple-700 mb-3">Teach kids to make their own smoothie bowl! Great for motor skills and healthy eating habits.</p>
-                <div className="flex items-center space-x-2">
-                  <span className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full">Ages 5-12</span>
-                  <span className="bg-pink-100 text-pink-700 text-xs px-2 py-1 rounded-full">15 mins</span>
-                </div>
-              </div>
-              
-              <div className="bg-white/60 rounded-lg p-4">
-                <h4 className="font-medium text-purple-900 mb-2">Safety Tip</h4>
-                <p className="text-sm text-purple-700">Always supervise knife work and teach proper hand positioning. Start with plastic knives for younger children.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-50 to-blue-50 border border-green-200 rounded-lg p-6">
-            <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mr-3">
-                <div className="text-white text-lg">💡</div>
-              </div>
-              <h3 className="text-lg font-semibold">Weekly Prep Tips</h3>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="bg-white/60 rounded-lg p-4">
-                <h4 className="font-medium text-green-900 mb-2">Sunday Batch Prep</h4>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Wash and chop vegetables for the week</li>
-                  <li>• Cook grains in bulk (quinoa, rice, pasta)</li>
-                  <li>• Prepare freezer-friendly portions</li>
-                </ul>
-              </div>
-              
-              <div className="bg-white/60 rounded-lg p-4">
-                <h4 className="font-medium text-green-900 mb-2">Money-Saving Tip</h4>
-                <p className="text-sm text-green-700">Buy proteins on sale and freeze in family-sized portions. Label with date and cooking instructions!</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
       </main>
     </div>
   );
