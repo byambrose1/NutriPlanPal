@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Onboarding from "@/pages/onboarding";
 import Recipes from "@/pages/recipes";
 import Shopping from "@/pages/shopping";
+import Pantry from "@/pages/pantry";
 import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
@@ -42,6 +43,9 @@ function Router() {
       </Route>
       <Route path="/shopping">
         {isAuthenticated ? <Shopping /> : <Redirect to="/" />}
+      </Route>
+      <Route path="/pantry">
+        {isAuthenticated ? <Pantry /> : <Redirect to="/" />}
       </Route>
       <Route path="/profile">
         {isAuthenticated ? <Profile /> : <Redirect to="/" />}
