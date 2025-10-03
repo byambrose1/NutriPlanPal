@@ -126,11 +126,11 @@ export class MemStorage implements IStorage {
           "Season with herbs and serve"
         ],
         ingredients: [
-          { name: "Ground turkey", amount: "1", unit: "lb" },
-          { name: "Whole wheat pasta", amount: "12", unit: "oz" },
-          { name: "Diced tomatoes", amount: "1", unit: "can" },
-          { name: "Chicken broth", amount: "2", unit: "cups" },
-          { name: "Mixed vegetables", amount: "2", unit: "cups" },
+          { name: "Ground turkey", amount: "500", unit: "g" },
+          { name: "Whole wheat pasta", amount: "350", unit: "g" },
+          { name: "Diced tomatoes", amount: "1", unit: "tin" },
+          { name: "Chicken stock", amount: "500", unit: "ml" },
+          { name: "Mixed vegetables", amount: "300", unit: "g" },
           { name: "Olive oil", amount: "2", unit: "tbsp" },
           { name: "Onion", amount: "1", unit: "medium" }
         ],
@@ -149,11 +149,179 @@ export class MemStorage implements IStorage {
           sugar: 8,
           sodium: 580
         },
-        estimatedCost: "12.50",
+        estimatedCost: "8.50",
         isBatchCookable: true,
         isFreezerFriendly: true,
         isKidFriendly: true,
         imageUrl: "https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5"
+      },
+      {
+        id: "recipe-2",
+        title: "Chickpea Curry",
+        description: "Creamy and flavourful vegetarian curry that's budget-friendly and packed with protein.",
+        instructions: [
+          "Fry onions, garlic, and ginger in oil until soft",
+          "Add curry powder and cook for 1 minute",
+          "Add tinned tomatoes and chickpeas",
+          "Simmer for 15 minutes",
+          "Stir in coconut milk",
+          "Serve with rice or naan"
+        ],
+        ingredients: [
+          { name: "Chickpeas", amount: "2", unit: "tins" },
+          { name: "Tinned tomatoes", amount: "1", unit: "tin" },
+          { name: "Coconut milk", amount: "400", unit: "ml" },
+          { name: "Onion", amount: "1", unit: "large" },
+          { name: "Garlic", amount: "3", unit: "cloves" },
+          { name: "Ginger", amount: "2", unit: "cm" },
+          { name: "Curry powder", amount: "2", unit: "tbsp" }
+        ],
+        prepTime: 10,
+        cookTime: 20,
+        servings: 4,
+        difficulty: "easy",
+        cuisineType: "Indian",
+        dietaryTags: ["vegetarian", "vegan", "batch-cookable"],
+        nutrition: {
+          calories: 280,
+          protein: 12,
+          carbs: 38,
+          fat: 10,
+          fiber: 11,
+          sugar: 6,
+          sodium: 420
+        },
+        estimatedCost: "4.20",
+        isBatchCookable: true,
+        isFreezerFriendly: true,
+        isKidFriendly: false,
+        imageUrl: "https://images.unsplash.com/photo-1565557623262-b51c2513a641"
+      },
+      {
+        id: "recipe-3",
+        title: "Shepherd's Pie",
+        description: "Classic British comfort food with lean minced lamb and a fluffy mash topping.",
+        instructions: [
+          "Fry mince until browned, then set aside",
+          "Cook onions, carrots, and peas",
+          "Return mince, add stock and tomato purée",
+          "Simmer for 20 minutes",
+          "Make mashed potatoes",
+          "Layer mince in dish, top with mash",
+          "Bake at 200°C for 20 minutes"
+        ],
+        ingredients: [
+          { name: "Minced lamb", amount: "500", unit: "g" },
+          { name: "Potatoes", amount: "800", unit: "g" },
+          { name: "Carrots", amount: "2", unit: "large" },
+          { name: "Peas", amount: "100", unit: "g" },
+          { name: "Onion", amount: "1", unit: "large" },
+          { name: "Beef stock", amount: "300", unit: "ml" },
+          { name: "Tomato purée", amount: "2", unit: "tbsp" }
+        ],
+        prepTime: 20,
+        cookTime: 50,
+        servings: 6,
+        difficulty: "medium",
+        cuisineType: "British",
+        dietaryTags: ["kid-friendly", "batch-cookable"],
+        nutrition: {
+          calories: 380,
+          protein: 22,
+          carbs: 40,
+          fat: 14,
+          fiber: 6,
+          sugar: 5,
+          sodium: 520
+        },
+        estimatedCost: "9.50",
+        isBatchCookable: true,
+        isFreezerFriendly: true,
+        isKidFriendly: true,
+        imageUrl: "https://images.unsplash.com/photo-1574894709920-11b28e7367e3"
+      },
+      {
+        id: "recipe-4",
+        title: "Lentil Bolognese",
+        description: "Hearty vegan alternative to traditional bolognese. Brilliantly budget-friendly!",
+        instructions: [
+          "Fry onions, carrots, and celery until soft",
+          "Add garlic and cook for 1 minute",
+          "Add lentils, tinned tomatoes, and stock",
+          "Simmer for 30 minutes",
+          "Season and serve with spaghetti"
+        ],
+        ingredients: [
+          { name: "Red lentils", amount: "200", unit: "g" },
+          { name: "Tinned tomatoes", amount: "2", unit: "tins" },
+          { name: "Onion", amount: "1", unit: "large" },
+          { name: "Carrots", amount: "2", unit: "medium" },
+          { name: "Celery", amount: "2", unit: "sticks" },
+          { name: "Vegetable stock", amount: "400", unit: "ml" },
+          { name: "Spaghetti", amount: "400", unit: "g" }
+        ],
+        prepTime: 10,
+        cookTime: 35,
+        servings: 4,
+        difficulty: "easy",
+        cuisineType: "Italian",
+        dietaryTags: ["vegetarian", "vegan", "batch-cookable"],
+        nutrition: {
+          calories: 340,
+          protein: 16,
+          carbs: 62,
+          fat: 2,
+          fiber: 12,
+          sugar: 10,
+          sodium: 380
+        },
+        estimatedCost: "3.80",
+        isBatchCookable: true,
+        isFreezerFriendly: true,
+        isKidFriendly: true,
+        imageUrl: "https://images.unsplash.com/photo-1572441713132-c542fc4fe282"
+      },
+      {
+        id: "recipe-5",
+        title: "Chicken Stir-Fry",
+        description: "Quick and healthy midweek meal loaded with colourful vegetables.",
+        instructions: [
+          "Cut chicken into strips",
+          "Stir-fry chicken in hot wok",
+          "Remove chicken, add vegetables",
+          "Return chicken, add sauce",
+          "Toss for 2 minutes",
+          "Serve with rice or noodles"
+        ],
+        ingredients: [
+          { name: "Chicken breast", amount: "400", unit: "g" },
+          { name: "Mixed peppers", amount: "2", unit: "whole" },
+          { name: "Broccoli", amount: "200", unit: "g" },
+          { name: "Soy sauce", amount: "3", unit: "tbsp" },
+          { name: "Honey", amount: "1", unit: "tbsp" },
+          { name: "Ginger", amount: "2", unit: "cm" },
+          { name: "Garlic", amount: "2", unit: "cloves" }
+        ],
+        prepTime: 15,
+        cookTime: 10,
+        servings: 4,
+        difficulty: "easy",
+        cuisineType: "Chinese",
+        dietaryTags: ["kid-friendly"],
+        nutrition: {
+          calories: 220,
+          protein: 28,
+          carbs: 16,
+          fat: 5,
+          fiber: 4,
+          sugar: 9,
+          sodium: 680
+        },
+        estimatedCost: "7.20",
+        isBatchCookable: false,
+        isFreezerFriendly: false,
+        isKidFriendly: true,
+        imageUrl: "https://images.unsplash.com/photo-1512058564366-18510be2db19"
       }
     ];
 

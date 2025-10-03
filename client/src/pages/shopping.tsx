@@ -92,7 +92,7 @@ export default function Shopping() {
   };
 
   const handleOptimizeRoute = () => {
-    const stores = ["Walmart", "Target", "Aldi", "Kroger"];
+    const stores = ["Tesco", "Sainsbury's", "Asda", "Morrisons"];
     routeOptimizationMutation.mutate(stores);
   };
 
@@ -105,11 +105,12 @@ export default function Shopping() {
   };
 
   const mockStores = [
-    { name: "Aldi", distance: "1.2 mi", priceRating: "budget", estimatedTime: "15 min" },
-    { name: "Walmart", distance: "2.1 mi", priceRating: "budget", estimatedTime: "25 min" },
-    { name: "Target", distance: "1.8 mi", priceRating: "moderate", estimatedTime: "20 min" },
-    { name: "Kroger", distance: "2.5 mi", priceRating: "moderate", estimatedTime: "30 min" },
-    { name: "Whole Foods", distance: "3.2 mi", priceRating: "premium", estimatedTime: "35 min" }
+    { name: "Aldi", distance: "1.9 km", priceRating: "budget", estimatedTime: "15 min" },
+    { name: "Tesco", distance: "2.5 km", priceRating: "budget", estimatedTime: "20 min" },
+    { name: "Asda", distance: "2.9 km", priceRating: "budget", estimatedTime: "22 min" },
+    { name: "Sainsbury's", distance: "3.2 km", priceRating: "moderate", estimatedTime: "25 min" },
+    { name: "Morrisons", distance: "4.0 km", priceRating: "moderate", estimatedTime: "30 min" },
+    { name: "Waitrose", distance: "5.1 km", priceRating: "premium", estimatedTime: "35 min" }
   ];
 
   return (
