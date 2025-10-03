@@ -16,6 +16,8 @@ import {
   type InsertMealPlan,
   type ShoppingList,
   type InsertShoppingList,
+  type PantryItem,
+  type InsertPantryItem,
   type GroceryPrice,
   type InsertGroceryPrice,
   type RecipeFeedback,
@@ -71,6 +73,13 @@ export interface IStorage {
   getActiveShoppingList(householdId: string): Promise<ShoppingList | undefined>;
   createShoppingList(shoppingList: InsertShoppingList): Promise<ShoppingList>;
   
+  // Pantry Items
+  getPantryItem(id: string): Promise<PantryItem | undefined>;
+  getHouseholdPantryItems(householdId: string): Promise<PantryItem[]>;
+  createPantryItem(item: InsertPantryItem): Promise<PantryItem>;
+  updatePantryItem(id: string, updates: Partial<InsertPantryItem>): Promise<PantryItem | undefined>;
+  deletePantryItem(id: string): Promise<boolean>;
+  
   // Grocery Prices
   getGroceryPrices(itemName: string): Promise<GroceryPrice[]>;
   createGroceryPrice(price: InsertGroceryPrice): Promise<GroceryPrice>;
@@ -91,6 +100,7 @@ export class MemStorage implements IStorage {
   private recipes: Map<string, Recipe> = new Map();
   private mealPlans: Map<string, MealPlan> = new Map();
   private shoppingLists: Map<string, ShoppingList> = new Map();
+  private pantryItems: Map<string, PantryItem> = new Map();
   private groceryPrices: Map<string, GroceryPrice[]> = new Map();
   private recipeFeedback: Map<string, RecipeFeedback> = new Map();
   private mealPlanFeedback: Map<string, MealPlanFeedback> = new Map();
@@ -458,6 +468,48 @@ export class MemStorage implements IStorage {
     };
     this.shoppingLists.set(id, shoppingList);
     return shoppingList;
+  }
+
+  // Pantry Item methods
+  async getPantryItem(id: string): Promise<PantryItem | undefined> {
+    return this.pantryItems.get(id);
+  }
+
+  async getHouseholdPantryItems(householdId: string): Promise<PantryItem[]> {
+    return Array.from(this.pantryItems.values()).filter(item => item.householdId === householdId);
+  }
+
+  async createPantryItem(insertItem: InsertPantryItem): Promise<PantryItem> {
+    const id = randomUUID();
+    const pantryItem: PantryItem = {
+      ...insertItem,
+      id,
+      category: insertItem.category || null,
+      expirationDate: insertItem.expirationDate || null,
+      notes: insertItem.notes || null,
+      purchaseDate: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.pantryItems.set(id, pantryItem);
+    return pantryItem;
+  }
+
+  async updatePantryItem(id: string, updates: Partial<InsertPantryItem>): Promise<PantryItem | undefined> {
+    const existing = await this.getPantryItem(id);
+    if (!existing) return undefined;
+    
+    const updated: PantryItem = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.pantryItems.set(id, updated);
+    return updated;
+  }
+
+  async deletePantryItem(id: string): Promise<boolean> {
+    return this.pantryItems.delete(id);
   }
 
   // Grocery Price methods
