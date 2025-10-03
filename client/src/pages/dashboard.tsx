@@ -62,7 +62,7 @@ export default function Dashboard() {
   // Generate meal plan mutation
   const generateMealPlanMutation = useMutation({
     mutationFn: async (memberId: string) => {
-      return await apiRequest(`/api/members/${memberId}/meal-plans/generate`, "POST");
+      return await apiRequest("POST", `/api/members/${memberId}/meal-plans/generate`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/members"] });
@@ -83,7 +83,7 @@ export default function Dashboard() {
   // Generate shopping list mutation
   const generateShoppingListMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest(`/api/households/${household?.id}/shopping-lists/generate`, "POST");
+      return await apiRequest("POST", `/api/households/${household?.id}/shopping-lists/generate`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/households", household?.id, "shopping-lists"] });
