@@ -10,6 +10,7 @@ import {
   insertRecipeSchema,
   insertMealPlanSchema,
   insertShoppingListSchema,
+  insertPantryItemSchema,
   insertRecipeFeedbackSchema,
   insertMealPlanFeedbackSchema
 } from "@shared/schema";
@@ -407,6 +408,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(shoppingList);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Pantry Inventory endpoints
+  app.get("/api/households/:householdId/pantry", isAuthenticated, async (req, res) => {
+    try {
+      const pantryItems = await storage.getHouseholdPantryItems(req.params.householdId);
+      res.json(pantryItems);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/households/:householdId/pantry", isAuthenticated, async (req, res) => {
+    try {
+      const itemData = insertPantryItemSchema.parse({
+        ...req.body,
+        householdId: req.params.householdId
+      });
+
+      const pantryItem = await storage.createPantryItem(itemData);
+      res.json(pantryItem);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/pantry/:id", isAuthenticated, async (req, res) => {
+    try {
+      const itemData = insertPantryItemSchema.partial().parse(req.body);
+      const updatedItem = await storage.updatePantryItem(req.params.id, itemData);
+      
+      if (!updatedItem) {
+        return res.status(404).json({ message: "Pantry item not found" });
+      }
+
+      res.json(updatedItem);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/pantry/:id", isAuthenticated, async (req, res) => {
+    try {
+      const deleted = await storage.deletePantryItem(req.params.id);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Pantry item not found" });
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 
