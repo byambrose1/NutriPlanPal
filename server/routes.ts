@@ -514,6 +514,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Nutrition Report endpoints
+  app.get("/api/members/:memberId/nutrition-report", isAuthenticated, async (req, res) => {
+    try {
+      const { memberId } = req.params;
+      const period = req.query.period as string || 'week'; // week or month
+      
+      const endDate = new Date();
+      const startDate = new Date();
+      
+      if (period === 'month') {
+        startDate.setMonth(startDate.getMonth() - 1);
+      } else {
+        startDate.setDate(startDate.getDate() - 7);
+      }
+      
+      const report = await storage.getMemberNutritionReport(memberId, startDate, endDate);
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

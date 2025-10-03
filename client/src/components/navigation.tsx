@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Home, BookOpen, ShoppingCart, User, Utensils, Bell } from "lucide-react";
+import { Home, BookOpen, ShoppingCart, User, Utensils, Bell, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Navigation() {
@@ -65,6 +65,19 @@ export function Navigation() {
                   Shopping
                 </Button>
               </Link>
+              <Link href="/nutrition">
+                <Button 
+                  variant={isActive("/nutrition") ? "default" : "ghost"}
+                  className={cn(
+                    "px-4 py-2 font-medium transition-colors",
+                    isActive("/nutrition") && "navigation-active"
+                  )}
+                  data-testid="nav-nutrition"
+                >
+                  <Activity className="mr-2 h-4 w-4" />
+                  Nutrition
+                </Button>
+              </Link>
               <Link href="/profile">
                 <Button 
                   variant={isActive("/profile") ? "default" : "ghost"}
@@ -94,7 +107,7 @@ export function Navigation() {
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-        <div className="grid grid-cols-4 gap-1 p-2">
+        <div className="grid grid-cols-5 gap-1 p-2">
           <Link href="/">
             <Button
               variant="ghost"
@@ -132,6 +145,19 @@ export function Navigation() {
             >
               <ShoppingCart className="h-5 w-5" />
               <span className="text-xs mt-1">Shopping</span>
+            </Button>
+          </Link>
+          <Link href="/nutrition">
+            <Button
+              variant="ghost"
+              className={cn(
+                "flex flex-col items-center py-2 px-1 h-auto",
+                isActive("/nutrition") ? "text-primary" : "text-muted-foreground"
+              )}
+              data-testid="mobile-nav-nutrition"
+            >
+              <Activity className="h-5 w-5" />
+              <span className="text-xs mt-1">Nutrition</span>
             </Button>
           </Link>
           <Link href="/profile">

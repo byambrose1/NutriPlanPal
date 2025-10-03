@@ -10,6 +10,7 @@ import Onboarding from "@/pages/onboarding";
 import Recipes from "@/pages/recipes";
 import Shopping from "@/pages/shopping";
 import Pantry from "@/pages/pantry";
+import NutritionReports from "@/pages/nutrition-reports";
 import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
@@ -46,6 +47,9 @@ function Router() {
       </Route>
       <Route path="/pantry">
         {isAuthenticated ? <Pantry /> : <Redirect to="/" />}
+      </Route>
+      <Route path="/nutrition">
+        {isAuthenticated ? <NutritionReports /> : <Redirect to="/" />}
       </Route>
       <Route path="/profile">
         {isAuthenticated ? <Profile /> : <Redirect to="/" />}
