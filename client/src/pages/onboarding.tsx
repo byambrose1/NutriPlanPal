@@ -236,96 +236,109 @@ export default function Onboarding() {
     }
   });
 
-  const createUserMutation = useMutation({
-    mutationFn: async (userData: { name: string; email: string; username: string }) => {
-      return await apiRequest('POST', '/api/users', userData);
+  const createHouseholdMutation = useMutation({
+    mutationFn: async (householdData: any) => {
+      return await apiRequest('/api/households', 'POST', householdData);
     }
   });
 
-  const createProfileMutation = useMutation({
-    mutationFn: async ({ userId, profileData }: { userId: string; profileData: any }) => {
-      return await apiRequest('POST', `/api/users/${userId}/profile`, profileData);
+  const createMemberMutation = useMutation({
+    mutationFn: async ({ householdId, memberData }: { householdId: string; memberData: any }) => {
+      return await apiRequest(`/api/households/${householdId}/members`, 'POST', memberData);
+    }
+  });
+
+  const createPreferencesMutation = useMutation({
+    mutationFn: async ({ householdId, preferencesData }: { householdId: string; preferencesData: any }) => {
+      return await apiRequest(`/api/households/${householdId}/preferences`, 'POST', preferencesData);
+    }
+  });
+
+  const createNotificationsMutation = useMutation({
+    mutationFn: async (notificationData: any) => {
+      return await apiRequest('/api/notification-preferences', 'POST', notificationData);
     }
   });
 
   const onSubmit = async (data: ProfileFormData) => {
     console.log('Form submitted with data:', data);
     try {
-      // Create user first
-      console.log('Creating user...');
-      const userResponse = await createUserMutation.mutateAsync({
-        name: data.name,
-        email: data.email,
-        username: data.email // Using email as username for simplicity
-      });
-
-      const user = await userResponse.json();
-      console.log('User created:', user);
-
-      // Combine checked allergies with custom allergies
+      // Combine custom inputs with checked options
       const allAllergies = [...data.allergies];
       if (data.customAllergies) {
-        const customAllergiesList = data.customAllergies.split(',').map(a => a.trim()).filter(a => a);
-        allAllergies.push(...customAllergiesList);
+        allAllergies.push(...data.customAllergies.split(',').map(a => a.trim()).filter(a => a));
       }
 
-      // Combine checked medical conditions with custom medical conditions
       const allMedicalConditions = [...data.medicalConditions];
       if (data.customMedicalConditions) {
-        const customMedicalList = data.customMedicalConditions.split(',').map(c => c.trim()).filter(c => c);
-        allMedicalConditions.push(...customMedicalList);
+        allMedicalConditions.push(...data.customMedicalConditions.split(',').map(c => c.trim()).filter(c => c));
       }
 
-      // Combine checked cuisines with custom cuisines
       const allCuisines = [...data.preferredCuisines];
       if (data.customCuisines) {
-        const customCuisinesList = data.customCuisines.split(',').map(c => c.trim()).filter(c => c);
-        allCuisines.push(...customCuisinesList);
+        allCuisines.push(...data.customCuisines.split(',').map(c => c.trim()).filter(c => c));
       }
 
-      // Combine checked dislikes with custom dislikes
       const allDislikes = [...data.dislikedIngredients];
       if (data.customDislikes) {
-        const customDislikesList = data.customDislikes.split(',').map(d => d.trim()).filter(d => d);
-        allDislikes.push(...customDislikesList);
+        allDislikes.push(...data.customDislikes.split(',').map(d => d.trim()).filter(d => d));
       }
 
-      // Create profile
-      console.log('Creating profile...');
-      await createProfileMutation.mutateAsync({
-        userId: user.id,
-        profileData: {
-          familySize: data.familySize,
-          currency: data.currency,
-          weeklyBudget: data.weeklyBudget.toString(),
-          childrenAges: data.childrenAges,
+      // Step 1: Create household
+      console.log('Creating household...');
+      const household = await createHouseholdMutation.mutateAsync({
+        weeklyBudget: data.weeklyBudget.toString(),
+        currency: data.currency,
+      });
+
+      // Step 2: Create household member
+      console.log('Creating household member...');
+      await createMemberMutation.mutateAsync({
+        householdId: household.id,
+        memberData: {
+          name: data.name,
+          age: data.age,
+          gender: data.gender,
           dietaryRestrictions: data.dietaryRestrictions,
           allergies: allAllergies,
           medicalConditions: allMedicalConditions,
-          cookingSkillLevel: data.cookingSkillLevel,
-          kitchenEquipment: data.kitchenEquipment,
-          goals: data.goals,
+          dislikedFoods: allDislikes,
           preferredCuisines: allCuisines,
-          dislikedIngredients: allDislikes,
-          mealPrepPreference: data.mealPrepPreference,
           primaryGoal: data.primaryGoal,
           currentWeight: data.currentWeight?.toString(),
           weightUnit: data.weightUnit,
           height: data.height?.toString(),
           heightUnit: data.heightUnit,
           activityLevel: data.activityLevel,
-          age: data.age,
-          gender: data.gender
         }
       });
 
-      console.log('Profile created successfully');
+      // Step 3: Create household preferences
+      console.log('Creating household preferences...');
+      await createPreferencesMutation.mutateAsync({
+        householdId: household.id,
+        preferencesData: {
+          cookingSkillLevel: data.cookingSkillLevel,
+          kitchenEquipment: data.kitchenEquipment,
+          mealPrepPreference: data.mealPrepPreference,
+        }
+      });
+
+      // Step 4: Create notification preferences
+      console.log('Creating notification preferences...');
+      await createNotificationsMutation.mutateAsync({
+        emailNotifications: true,
+        mealPlanReminders: true,
+        shoppingListReminders: true,
+      });
+
+      console.log('Profile created successfully!');
       toast({
         title: "Welcome to NutriPlan!",
         description: "Your profile has been created successfully.",
       });
 
-      setLocation("/");
+      setLocation("/dashboard");
     } catch (error) {
       console.error('Onboarding submission error:', error);
       toast({
@@ -1137,7 +1150,7 @@ export default function Onboarding() {
             {currentStep === totalSteps ? (
               <Button
                 type="submit"
-                disabled={createUserMutation.isPending || createProfileMutation.isPending}
+                disabled={createHouseholdMutation.isPending || createMemberMutation.isPending}
                 data-testid="button-complete-onboarding"
                 onClick={(e) => {
                   console.log('Complete Setup button clicked');
@@ -1145,7 +1158,7 @@ export default function Onboarding() {
                   // Let the form handle the submit
                 }}
               >
-                {(createUserMutation.isPending || createProfileMutation.isPending) ? "Creating Profile..." : "Complete Setup"}
+                {(createHouseholdMutation.isPending || createMemberMutation.isPending) ? "Creating Profile..." : "Complete Setup"}
               </Button>
             ) : (
               <Button
