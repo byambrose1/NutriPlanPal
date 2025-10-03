@@ -399,29 +399,44 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      {/* Language Switcher */}
-      <div className="fixed top-4 right-4 z-50">
-        <div className="flex gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-full p-1 shadow-lg">
-          <Button 
-            variant={language === 'en-GB' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setLanguage('en-GB')}
-            className="rounded-full text-xs"
-            data-testid="language-gb"
-          >
-            <Globe className="w-3 h-3 mr-1" />
-            UK
-          </Button>
-          <Button 
-            variant={language === 'en-US' ? 'default' : 'ghost'}
-            size="sm" 
-            onClick={() => setLanguage('en-US')}
-            className="rounded-full text-xs"
-            data-testid="language-us"
-          >
-            <Globe className="w-3 h-3 mr-1" />
-            US
-          </Button>
+      {/* Header with Language Switcher and Login */}
+      <div className="fixed top-4 left-0 right-0 z-50 px-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          {/* Login Button */}
+          <a href="/api/login">
+            <Button 
+              variant="outline"
+              size="sm"
+              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur rounded-full shadow-lg hover:shadow-xl transition-all"
+              data-testid="button-login"
+            >
+              Login
+            </Button>
+          </a>
+          
+          {/* Language Switcher */}
+          <div className="flex gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur rounded-full p-1 shadow-lg">
+            <Button 
+              variant={language === 'en-GB' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setLanguage('en-GB')}
+              className="rounded-full text-xs"
+              data-testid="language-gb"
+            >
+              <Globe className="w-3 h-3 mr-1" />
+              UK
+            </Button>
+            <Button 
+              variant={language === 'en-US' ? 'default' : 'ghost'}
+              size="sm" 
+              onClick={() => setLanguage('en-US')}
+              className="rounded-full text-xs"
+              data-testid="language-us"
+            >
+              <Globe className="w-3 h-3 mr-1" />
+              US
+            </Button>
+          </div>
         </div>
       </div>
 
