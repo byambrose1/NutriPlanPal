@@ -8,9 +8,11 @@ import { Recipe, ImageMetadata } from "@shared/schema";
 interface RecipeCardProps {
   recipe: Recipe;
   onClick?: () => void;
+  currency?: 'GBP' | 'USD';
 }
 
-export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
+export function RecipeCard({ recipe, onClick, currency = 'GBP' }: RecipeCardProps) {
+  const currencySymbol = currency === 'GBP' ? '£' : '$';
   const totalTime = recipe.prepTime + recipe.cookTime;
   
   // Get image metadata if available, fallback to legacy imageUrl
@@ -91,7 +93,7 @@ export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
           </div>
           <div className="flex items-center justify-center bg-muted/50 rounded-lg py-2 px-1">
             <DollarSign className="mr-1 h-3 w-3 text-primary" />
-            <span className="font-medium">${recipe.estimatedCost || '0.00'}</span>
+            <span className="font-medium">{currencySymbol}{recipe.estimatedCost || '0.00'}</span>
           </div>
         </div>
 

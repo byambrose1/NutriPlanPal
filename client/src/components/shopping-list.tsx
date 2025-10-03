@@ -25,9 +25,11 @@ interface ShoppingListProps {
     totalEstimatedCost: string;
   };
   onItemsSelected?: (items: string[]) => void;
+  currency?: 'GBP' | 'USD';
 }
 
-export function ShoppingList({ shoppingList, onItemsSelected }: ShoppingListProps) {
+export function ShoppingList({ shoppingList, onItemsSelected, currency = 'GBP' }: ShoppingListProps) {
+  const currencySymbol = currency === 'GBP' ? '£' : '$';
   const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -103,10 +105,10 @@ export function ShoppingList({ shoppingList, onItemsSelected }: ShoppingListProp
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">
-            Spent: ${completedCost.toFixed(2)}
+            Spent: {currencySymbol}{completedCost.toFixed(2)}
           </span>
           <span className="text-muted-foreground">
-            Total: ${totalCost.toFixed(2)}
+            Total: {currencySymbol}{totalCost.toFixed(2)}
           </span>
         </div>
       </div>

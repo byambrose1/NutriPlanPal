@@ -151,7 +151,7 @@ export default function Dashboard() {
                   {household?.name || "Your Household"}
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500">
-                  {household?.currency} {household?.weeklyBudget}/week
+                  {household?.currency === 'GBP' ? '£' : '$'}{household?.weeklyBudget}/week
                 </p>
               </div>
             </div>
