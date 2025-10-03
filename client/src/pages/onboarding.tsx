@@ -286,10 +286,11 @@ export default function Onboarding() {
 
       // Step 1: Create household
       console.log('Creating household...');
-      const household = await createHouseholdMutation.mutateAsync({
+      const householdResponse = await createHouseholdMutation.mutateAsync({
         weeklyBudget: data.weeklyBudget.toString(),
         currency: data.currency,
       });
+      const household = await householdResponse.json();
 
       // Step 2: Create household member
       console.log('Creating household member...');
