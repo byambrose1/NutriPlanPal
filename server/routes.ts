@@ -396,7 +396,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       });
 
-      const items = Array.from(mergedItems.values());
+      // Fetch pantry items and exclude them from shopping list
+      const pantryItems = await storage.getHouseholdPantryItems(req.params.householdId);
+      const pantryItemNames = new Set(
+        pantryItems.map((item: any) => item.ingredientName.toLowerCase())
+      );
+
+      // Filter out items that are already in the pantry
+      const items = Array.from(mergedItems.values()).filter(
+        (item: any) => !pantryItemNames.has(item.name.toLowerCase())
+      );
       
       const shoppingList = await storage.createShoppingList({
         householdId: req.params.householdId,
