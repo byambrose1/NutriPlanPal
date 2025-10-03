@@ -471,7 +471,7 @@ const Landing = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            <Link href="/onboarding">
+            <a href="/api/login">
               <Button 
                 size="lg" 
                 className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold px-8 py-6 text-lg rounded-full shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
@@ -480,7 +480,7 @@ const Landing = () => {
                 <Sparkles className="w-5 h-5 mr-2" />
                 {currentContent.hero.ctaPrimary}
               </Button>
-            </Link>
+            </a>
             
             <Button 
               variant="outline" 
@@ -652,7 +652,7 @@ const Landing = () => {
             {currentContent.cta.subtitle}
           </p>
           
-          <Link href="/onboarding">
+          <a href="/api/login">
             <Button 
               size="lg"
               className="bg-white text-orange-600 hover:bg-gray-100 font-semibold px-12 py-6 text-xl rounded-full shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
@@ -661,7 +661,7 @@ const Landing = () => {
               <ChefHat className="w-6 h-6 mr-3" />
               {currentContent.cta.button}
             </Button>
-          </Link>
+          </a>
           
           <p className="text-sm mt-6 text-white/80" data-testid="guarantee">
             {currentContent.cta.guarantee}
