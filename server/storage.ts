@@ -1,8 +1,15 @@
 import { 
   type User, 
-  type InsertUser, 
-  type UserProfile, 
-  type InsertUserProfile,
+  type InsertUser,
+  type UpsertUser,
+  type Household,
+  type InsertHousehold,
+  type HouseholdMember,
+  type InsertHouseholdMember,
+  type HouseholdPreferences,
+  type InsertHouseholdPreferences,
+  type NotificationPreferences,
+  type InsertNotificationPreferences,
   type Recipe,
   type InsertRecipe,
   type MealPlan,
@@ -19,62 +26,68 @@ import {
 import { randomUUID } from "crypto";
 
 export interface IStorage {
-  // Users
+  // Users - Required for Replit Auth
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
-  // User Profiles
-  getUserProfile(userId: string): Promise<UserProfile | undefined>;
-  createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
-  updateUserProfile(userId: string, updates: Partial<InsertUserProfile>): Promise<UserProfile | undefined>;
+  // Households
+  getHousehold(id: string): Promise<Household | undefined>;
+  getUserHousehold(userId: string): Promise<Household | undefined>;
+  createHousehold(household: InsertHousehold): Promise<Household>;
+  updateHousehold(id: string, updates: Partial<InsertHousehold>): Promise<Household | undefined>;
+  
+  // Household Members
+  getHouseholdMember(id: string): Promise<HouseholdMember | undefined>;
+  getHouseholdMembers(householdId: string): Promise<HouseholdMember[]>;
+  createHouseholdMember(member: InsertHouseholdMember): Promise<HouseholdMember>;
+  updateHouseholdMember(id: string, updates: Partial<InsertHouseholdMember>): Promise<HouseholdMember | undefined>;
+  
+  // Household Preferences
+  getHouseholdPreferences(householdId: string): Promise<HouseholdPreferences | undefined>;
+  createHouseholdPreferences(preferences: InsertHouseholdPreferences): Promise<HouseholdPreferences>;
+  updateHouseholdPreferences(householdId: string, updates: Partial<InsertHouseholdPreferences>): Promise<HouseholdPreferences | undefined>;
+  
+  // Notification Preferences
+  getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined>;
+  createNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
+  updateNotificationPreferences(userId: string, updates: Partial<InsertNotificationPreferences>): Promise<NotificationPreferences | undefined>;
   
   // Recipes
   getRecipe(id: string): Promise<Recipe | undefined>;
   getRecipes(limit?: number, offset?: number): Promise<Recipe[]>;
-  getRecipesByTags(tags: string[]): Promise<Recipe[]>;
-  getRecipesByDietary(dietaryRestrictions: string[]): Promise<Recipe[]>;
   createRecipe(recipe: InsertRecipe): Promise<Recipe>;
   searchRecipes(query: string): Promise<Recipe[]>;
   
   // Meal Plans
   getMealPlan(id: string): Promise<MealPlan | undefined>;
-  getActiveMealPlan(userId: string): Promise<MealPlan | undefined>;
-  getUserMealPlans(userId: string): Promise<MealPlan[]>;
+  getActiveMealPlan(householdMemberId: string): Promise<MealPlan | undefined>;
+  getMemberMealPlans(householdMemberId: string): Promise<MealPlan[]>;
   createMealPlan(mealPlan: InsertMealPlan): Promise<MealPlan>;
-  updateMealPlan(id: string, updates: Partial<InsertMealPlan>): Promise<MealPlan | undefined>;
   
   // Shopping Lists
   getShoppingList(id: string): Promise<ShoppingList | undefined>;
-  getUserShoppingLists(userId: string): Promise<ShoppingList[]>;
-  getActiveShoppingList(userId: string): Promise<ShoppingList | undefined>;
+  getHouseholdShoppingLists(householdId: string): Promise<ShoppingList[]>;
+  getActiveShoppingList(householdId: string): Promise<ShoppingList | undefined>;
   createShoppingList(shoppingList: InsertShoppingList): Promise<ShoppingList>;
-  updateShoppingList(id: string, updates: Partial<InsertShoppingList>): Promise<ShoppingList | undefined>;
   
   // Grocery Prices
   getGroceryPrices(itemName: string): Promise<GroceryPrice[]>;
   createGroceryPrice(price: InsertGroceryPrice): Promise<GroceryPrice>;
-  updateGroceryPrices(itemName: string, prices: InsertGroceryPrice[]): Promise<void>;
   
   // Recipe Feedback
-  getRecipeFeedback(recipeId: string): Promise<RecipeFeedback[]>;
-  getUserRecipeFeedback(userId: string, recipeId: string): Promise<RecipeFeedback | undefined>;
   createRecipeFeedback(feedback: InsertRecipeFeedback): Promise<RecipeFeedback>;
-  updateRecipeFeedback(id: string, updates: Partial<InsertRecipeFeedback>): Promise<RecipeFeedback | undefined>;
-  getRecipeAverageRating(recipeId: string): Promise<number>;
   
   // Meal Plan Feedback
-  getMealPlanFeedback(mealPlanId: string): Promise<MealPlanFeedback[]>;
-  getUserMealPlanFeedback(userId: string, mealPlanId: string): Promise<MealPlanFeedback | undefined>;
   createMealPlanFeedback(feedback: InsertMealPlanFeedback): Promise<MealPlanFeedback>;
-  updateMealPlanFeedback(id: string, updates: Partial<InsertMealPlanFeedback>): Promise<MealPlanFeedback | undefined>;
-  getMealPlanAverageRating(mealPlanId: string): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User> = new Map();
-  private userProfiles: Map<string, UserProfile> = new Map();
+  private households: Map<string, Household> = new Map();
+  private householdMembers: Map<string, HouseholdMember> = new Map();
+  private householdPreferences: Map<string, HouseholdPreferences> = new Map();
+  private notificationPreferences: Map<string, NotificationPreferences> = new Map();
   private recipes: Map<string, Recipe> = new Map();
   private mealPlans: Map<string, MealPlan> = new Map();
   private shoppingLists: Map<string, ShoppingList> = new Map();
@@ -131,46 +144,6 @@ export class MemStorage implements IStorage {
         isFreezerFriendly: true,
         isKidFriendly: true,
         imageUrl: "https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5"
-      },
-      {
-        id: "recipe-2",
-        title: "Tropical Smoothie Bowl",
-        description: "Vibrant and nutritious breakfast that kids love to help make and customize with their favorite toppings.",
-        instructions: [
-          "Freeze banana slices overnight",
-          "Blend frozen banana, mango, and coconut milk until smooth",
-          "Pour into a bowl",
-          "Top with granola, berries, and coconut flakes",
-          "Drizzle with honey if desired"
-        ],
-        ingredients: [
-          { name: "Frozen banana", amount: "2", unit: "medium" },
-          { name: "Frozen mango", amount: "1", unit: "cup" },
-          { name: "Coconut milk", amount: "1/2", unit: "cup" },
-          { name: "Granola", amount: "1/4", unit: "cup" },
-          { name: "Mixed berries", amount: "1/2", unit: "cup" },
-          { name: "Coconut flakes", amount: "2", unit: "tbsp" }
-        ],
-        prepTime: 10,
-        cookTime: 0,
-        servings: 2,
-        difficulty: "easy",
-        cuisineType: "Healthy",
-        dietaryTags: ["vegan", "gluten-free", "kid-friendly"],
-        nutrition: {
-          calories: 290,
-          protein: 12,
-          carbs: 58,
-          fat: 8,
-          fiber: 11,
-          sugar: 35,
-          sodium: 25
-        },
-        estimatedCost: "8.75",
-        isBatchCookable: false,
-        isFreezerFriendly: false,
-        isKidFriendly: true,
-        imageUrl: "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38"
       }
     ];
 
@@ -189,83 +162,206 @@ export class MemStorage implements IStorage {
         createdAt: new Date()
       });
     });
-
-    // Sample grocery prices
-    const samplePrices: { [key: string]: InsertGroceryPrice[] } = {
-      "Ground turkey": [
-        { itemName: "Ground turkey", storeName: "Whole Foods", price: "8.99", unit: "lb" },
-        { itemName: "Ground turkey", storeName: "Target", price: "7.49", unit: "lb" },
-        { itemName: "Ground turkey", storeName: "Walmart", price: "6.99", unit: "lb" }
-      ],
-      "Quinoa": [
-        { itemName: "Quinoa", storeName: "Target", price: "6.49", unit: "2 cups" },
-        { itemName: "Quinoa", storeName: "Whole Foods", price: "7.99", unit: "2 cups" },
-        { itemName: "Quinoa", storeName: "Aldi", price: "5.99", unit: "2 cups" }
-      ]
-    };
-
-    Object.entries(samplePrices).forEach(([itemName, prices]) => {
-      this.groceryPrices.set(itemName, prices.map(price => ({
-        ...price,
-        id: randomUUID(),
-        lastUpdated: new Date()
-      })));
-    });
   }
 
-  // User methods
+  // User methods - Required for Replit Auth
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(user => user.email === email);
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async upsertUser(upsertData: UpsertUser): Promise<User> {
+    const existingUser = this.users.get(upsertData.id!);
+    
+    if (existingUser) {
+      const updated: User = {
+        ...existingUser,
+        ...upsertData,
+        updatedAt: new Date()
+      };
+      this.users.set(upsertData.id!, updated);
+      return updated;
+    } else {
+      const newUser: User = {
+        id: upsertData.id!,
+        email: upsertData.email || null,
+        firstName: upsertData.firstName || null,
+        lastName: upsertData.lastName || null,
+        profileImageUrl: upsertData.profileImageUrl || null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      this.users.set(newUser.id, newUser);
+      return newUser;
+    }
+  }
+
+  // Household methods
+  async getHousehold(id: string): Promise<Household | undefined> {
+    return this.households.get(id);
+  }
+
+  async getUserHousehold(userId: string): Promise<Household | undefined> {
+    return Array.from(this.households.values()).find(h => h.ownerId === userId);
+  }
+
+  async createHousehold(insertHousehold: InsertHousehold): Promise<Household> {
     const id = randomUUID();
-    const user: User = {
-      ...insertUser,
+    const household: Household = {
+      ...insertHousehold,
       id,
-      createdAt: new Date()
+      name: insertHousehold.name || null,
+      currency: insertHousehold.currency || 'USD',
+      shoppingFrequency: insertHousehold.shoppingFrequency || null,
+      preferredStores: insertHousehold.preferredStores || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
-    this.users.set(id, user);
-    return user;
+    this.households.set(id, household);
+    return household;
   }
 
-  // User Profile methods
-  async getUserProfile(userId: string): Promise<UserProfile | undefined> {
-    return Array.from(this.userProfiles.values()).find(profile => profile.userId === userId);
-  }
-
-  async createUserProfile(insertProfile: InsertUserProfile): Promise<UserProfile> {
-    const id = randomUUID();
-    const profile: UserProfile = {
-      ...insertProfile,
-      id,
-      dietaryRestrictions: insertProfile.dietaryRestrictions || null,
-      allergies: insertProfile.allergies || null,
-      medicalConditions: insertProfile.medicalConditions || null,
-      kitchenEquipment: insertProfile.kitchenEquipment || null,
-      childrenAges: insertProfile.childrenAges || null,
-      goals: insertProfile.goals || null,
-      preferredCuisines: insertProfile.preferredCuisines || null,
-      dislikedIngredients: insertProfile.dislikedIngredients || null
-    };
-    this.userProfiles.set(id, profile);
-    return profile;
-  }
-
-  async updateUserProfile(userId: string, updates: Partial<InsertUserProfile>): Promise<UserProfile | undefined> {
-    const existing = await this.getUserProfile(userId);
+  async updateHousehold(id: string, updates: Partial<InsertHousehold>): Promise<Household | undefined> {
+    const existing = this.households.get(id);
     if (!existing) return undefined;
     
-    const updated = { ...existing, ...updates };
-    this.userProfiles.set(existing.id, updated);
+    const updated = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.households.set(id, updated);
+    return updated;
+  }
+
+  // Household Member methods
+  async getHouseholdMember(id: string): Promise<HouseholdMember | undefined> {
+    return this.householdMembers.get(id);
+  }
+
+  async getHouseholdMembers(householdId: string): Promise<HouseholdMember[]> {
+    return Array.from(this.householdMembers.values()).filter(m => m.householdId === householdId);
+  }
+
+  async createHouseholdMember(insertMember: InsertHouseholdMember): Promise<HouseholdMember> {
+    const id = randomUUID();
+    const member: HouseholdMember = {
+      ...insertMember,
+      id,
+      userId: insertMember.userId || null,
+      nickname: insertMember.nickname || null,
+      age: insertMember.age || null,
+      gender: insertMember.gender || null,
+      isChild: insertMember.isChild || null,
+      dietaryRestrictions: insertMember.dietaryRestrictions || null,
+      allergies: insertMember.allergies || null,
+      medicalConditions: insertMember.medicalConditions || null,
+      dislikedFoods: insertMember.dislikedFoods || null,
+      preferredCuisines: insertMember.preferredCuisines || null,
+      primaryGoal: insertMember.primaryGoal || null,
+      currentWeight: insertMember.currentWeight || null,
+      weightUnit: insertMember.weightUnit || null,
+      targetWeight: insertMember.targetWeight || null,
+      height: insertMember.height || null,
+      heightUnit: insertMember.heightUnit || null,
+      activityLevel: insertMember.activityLevel || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.householdMembers.set(id, member);
+    return member;
+  }
+
+  async updateHouseholdMember(id: string, updates: Partial<InsertHouseholdMember>): Promise<HouseholdMember | undefined> {
+    const existing = this.householdMembers.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.householdMembers.set(id, updated);
+    return updated;
+  }
+
+  // Household Preferences methods
+  async getHouseholdPreferences(householdId: string): Promise<HouseholdPreferences | undefined> {
+    return Array.from(this.householdPreferences.values()).find(p => p.householdId === householdId);
+  }
+
+  async createHouseholdPreferences(insertPreferences: InsertHouseholdPreferences): Promise<HouseholdPreferences> {
+    const id = randomUUID();
+    const preferences: HouseholdPreferences = {
+      ...insertPreferences,
+      id,
+      kitchenEquipment: insertPreferences.kitchenEquipment || null,
+      cookingTimeAvailable: insertPreferences.cookingTimeAvailable || null,
+      cookingStyle: insertPreferences.cookingStyle || null,
+      mealPrepPreference: insertPreferences.mealPrepPreference || null,
+      workSchedule: insertPreferences.workSchedule || null,
+      eatingOutFrequency: insertPreferences.eatingOutFrequency || null,
+      leftoverPreference: insertPreferences.leftoverPreference || null,
+      mealsPerDay: insertPreferences.mealsPerDay || null,
+      snacksPerDay: insertPreferences.snacksPerDay || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.householdPreferences.set(id, preferences);
+    return preferences;
+  }
+
+  async updateHouseholdPreferences(householdId: string, updates: Partial<InsertHouseholdPreferences>): Promise<HouseholdPreferences | undefined> {
+    const existing = await this.getHouseholdPreferences(householdId);
+    if (!existing) return undefined;
+    
+    const updated = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.householdPreferences.set(existing.id, updated);
+    return updated;
+  }
+
+  // Notification Preferences methods
+  async getNotificationPreferences(userId: string): Promise<NotificationPreferences | undefined> {
+    return Array.from(this.notificationPreferences.values()).find(p => p.userId === userId);
+  }
+
+  async createNotificationPreferences(insertPreferences: InsertNotificationPreferences): Promise<NotificationPreferences> {
+    const id = randomUUID();
+    const preferences: NotificationPreferences = {
+      ...insertPreferences,
+      id,
+      emailNotifications: insertPreferences.emailNotifications ?? null,
+      smsNotifications: insertPreferences.smsNotifications ?? null,
+      phoneNumber: insertPreferences.phoneNumber || null,
+      mealPlanReminders: insertPreferences.mealPlanReminders ?? null,
+      shoppingListReminders: insertPreferences.shoppingListReminders ?? null,
+      mealPrepReminders: insertPreferences.mealPrepReminders ?? null,
+      reminderTime: insertPreferences.reminderTime || null,
+      reminderDays: insertPreferences.reminderDays || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.notificationPreferences.set(id, preferences);
+    return preferences;
+  }
+
+  async updateNotificationPreferences(userId: string, updates: Partial<InsertNotificationPreferences>): Promise<NotificationPreferences | undefined> {
+    const existing = await this.getNotificationPreferences(userId);
+    if (!existing) return undefined;
+    
+    const updated = { 
+      ...existing, 
+      ...updates,
+      updatedAt: new Date()
+    };
+    this.notificationPreferences.set(existing.id, updated);
     return updated;
   }
 
@@ -277,18 +373,6 @@ export class MemStorage implements IStorage {
   async getRecipes(limit = 50, offset = 0): Promise<Recipe[]> {
     const recipes = Array.from(this.recipes.values());
     return recipes.slice(offset, offset + limit);
-  }
-
-  async getRecipesByTags(tags: string[]): Promise<Recipe[]> {
-    return Array.from(this.recipes.values()).filter(recipe =>
-      tags.some(tag => recipe.dietaryTags?.includes(tag))
-    );
-  }
-
-  async getRecipesByDietary(dietaryRestrictions: string[]): Promise<Recipe[]> {
-    return Array.from(this.recipes.values()).filter(recipe =>
-      !dietaryRestrictions.some(restriction => recipe.dietaryTags?.includes(restriction))
-    );
   }
 
   async createRecipe(insertRecipe: InsertRecipe): Promise<Recipe> {
@@ -324,14 +408,14 @@ export class MemStorage implements IStorage {
     return this.mealPlans.get(id);
   }
 
-  async getActiveMealPlan(userId: string): Promise<MealPlan | undefined> {
+  async getActiveMealPlan(householdMemberId: string): Promise<MealPlan | undefined> {
     return Array.from(this.mealPlans.values()).find(plan => 
-      plan.userId === userId && plan.isActive
+      plan.householdMemberId === householdMemberId && plan.isActive
     );
   }
 
-  async getUserMealPlans(userId: string): Promise<MealPlan[]> {
-    return Array.from(this.mealPlans.values()).filter(plan => plan.userId === userId);
+  async getMemberMealPlans(householdMemberId: string): Promise<MealPlan[]> {
+    return Array.from(this.mealPlans.values()).filter(plan => plan.householdMemberId === householdMemberId);
   }
 
   async createMealPlan(insertMealPlan: InsertMealPlan): Promise<MealPlan> {
@@ -348,27 +432,18 @@ export class MemStorage implements IStorage {
     return mealPlan;
   }
 
-  async updateMealPlan(id: string, updates: Partial<InsertMealPlan>): Promise<MealPlan | undefined> {
-    const existing = this.mealPlans.get(id);
-    if (!existing) return undefined;
-    
-    const updated = { ...existing, ...updates };
-    this.mealPlans.set(id, updated);
-    return updated;
-  }
-
   // Shopping List methods
   async getShoppingList(id: string): Promise<ShoppingList | undefined> {
     return this.shoppingLists.get(id);
   }
 
-  async getUserShoppingLists(userId: string): Promise<ShoppingList[]> {
-    return Array.from(this.shoppingLists.values()).filter(list => list.userId === userId);
+  async getHouseholdShoppingLists(householdId: string): Promise<ShoppingList[]> {
+    return Array.from(this.shoppingLists.values()).filter(list => list.householdId === householdId);
   }
 
-  async getActiveShoppingList(userId: string): Promise<ShoppingList | undefined> {
+  async getActiveShoppingList(householdId: string): Promise<ShoppingList | undefined> {
     return Array.from(this.shoppingLists.values()).find(list => 
-      list.userId === userId && !list.isCompleted
+      list.householdId === householdId && !list.isCompleted
     );
   }
 
@@ -377,22 +452,12 @@ export class MemStorage implements IStorage {
     const shoppingList: ShoppingList = {
       ...insertShoppingList,
       id,
-      mealPlanId: insertShoppingList.mealPlanId || null,
       totalEstimatedCost: insertShoppingList.totalEstimatedCost || null,
       isCompleted: false,
       createdAt: new Date()
     };
     this.shoppingLists.set(id, shoppingList);
     return shoppingList;
-  }
-
-  async updateShoppingList(id: string, updates: Partial<InsertShoppingList>): Promise<ShoppingList | undefined> {
-    const existing = this.shoppingLists.get(id);
-    if (!existing) return undefined;
-    
-    const updated = { ...existing, ...updates };
-    this.shoppingLists.set(id, updated);
-    return updated;
   }
 
   // Grocery Price methods
@@ -415,26 +480,7 @@ export class MemStorage implements IStorage {
     return price;
   }
 
-  async updateGroceryPrices(itemName: string, prices: InsertGroceryPrice[]): Promise<void> {
-    const groceryPrices = prices.map(price => ({
-      ...price,
-      id: randomUUID(),
-      lastUpdated: new Date()
-    }));
-    this.groceryPrices.set(itemName, groceryPrices);
-  }
-
   // Recipe Feedback methods
-  async getRecipeFeedback(recipeId: string): Promise<RecipeFeedback[]> {
-    return Array.from(this.recipeFeedback.values()).filter(feedback => feedback.recipeId === recipeId);
-  }
-
-  async getUserRecipeFeedback(userId: string, recipeId: string): Promise<RecipeFeedback | undefined> {
-    return Array.from(this.recipeFeedback.values()).find(
-      feedback => feedback.userId === userId && feedback.recipeId === recipeId
-    );
-  }
-
   async createRecipeFeedback(insertFeedback: InsertRecipeFeedback): Promise<RecipeFeedback> {
     const id = randomUUID();
     const feedback: RecipeFeedback = {
@@ -446,58 +492,10 @@ export class MemStorage implements IStorage {
       updatedAt: new Date()
     };
     this.recipeFeedback.set(id, feedback);
-    
-    // Update recipe average rating
-    await this.updateRecipeRating(insertFeedback.recipeId);
-    
     return feedback;
   }
 
-  async updateRecipeFeedback(id: string, updates: Partial<InsertRecipeFeedback>): Promise<RecipeFeedback | undefined> {
-    const existing = this.recipeFeedback.get(id);
-    if (!existing) return undefined;
-    
-    const updated = { 
-      ...existing, 
-      ...updates,
-      updatedAt: new Date()
-    };
-    this.recipeFeedback.set(id, updated);
-    
-    // Update recipe average rating
-    await this.updateRecipeRating(existing.recipeId);
-    
-    return updated;
-  }
-
-  async getRecipeAverageRating(recipeId: string): Promise<number> {
-    const feedbacks = await this.getRecipeFeedback(recipeId);
-    if (feedbacks.length === 0) return 0;
-    
-    const totalRating = feedbacks.reduce((sum, feedback) => sum + feedback.rating, 0);
-    return Math.round((totalRating / feedbacks.length) * 10) / 10; // Round to 1 decimal
-  }
-
-  private async updateRecipeRating(recipeId: string): Promise<void> {
-    const recipe = this.recipes.get(recipeId);
-    if (recipe) {
-      const averageRating = await this.getRecipeAverageRating(recipeId);
-      recipe.rating = averageRating.toString();
-      this.recipes.set(recipeId, recipe);
-    }
-  }
-
   // Meal Plan Feedback methods
-  async getMealPlanFeedback(mealPlanId: string): Promise<MealPlanFeedback[]> {
-    return Array.from(this.mealPlanFeedback.values()).filter(feedback => feedback.mealPlanId === mealPlanId);
-  }
-
-  async getUserMealPlanFeedback(userId: string, mealPlanId: string): Promise<MealPlanFeedback | undefined> {
-    return Array.from(this.mealPlanFeedback.values()).find(
-      feedback => feedback.userId === userId && feedback.mealPlanId === mealPlanId
-    );
-  }
-
   async createMealPlanFeedback(insertFeedback: InsertMealPlanFeedback): Promise<MealPlanFeedback> {
     const id = randomUUID();
     const feedback: MealPlanFeedback = {
@@ -510,27 +508,6 @@ export class MemStorage implements IStorage {
     };
     this.mealPlanFeedback.set(id, feedback);
     return feedback;
-  }
-
-  async updateMealPlanFeedback(id: string, updates: Partial<InsertMealPlanFeedback>): Promise<MealPlanFeedback | undefined> {
-    const existing = this.mealPlanFeedback.get(id);
-    if (!existing) return undefined;
-    
-    const updated = { 
-      ...existing, 
-      ...updates,
-      updatedAt: new Date()
-    };
-    this.mealPlanFeedback.set(id, updated);
-    return updated;
-  }
-
-  async getMealPlanAverageRating(mealPlanId: string): Promise<number> {
-    const feedbacks = await this.getMealPlanFeedback(mealPlanId);
-    if (feedbacks.length === 0) return 0;
-    
-    const totalRating = feedbacks.reduce((sum, feedback) => sum + feedback.rating, 0);
-    return Math.round((totalRating / feedbacks.length) * 10) / 10; // Round to 1 decimal
   }
 }
 
