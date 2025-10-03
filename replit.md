@@ -55,9 +55,19 @@ Preferred communication style: Simple, everyday language.
 
 #### Shopping Optimization
 - Automatic shopping list generation from meal plans
+- Smart pantry inventory integration automatically excludes items you already have
 - Price comparison across multiple grocery stores
 - Shopping route optimization for efficiency
 - Budget tracking and cost estimation features
+
+#### Pantry Inventory Management (NEW)
+- Real-time pantry tracking with household-level inventory
+- Add, edit, and delete pantry items with quantity, unit, and expiration tracking
+- Category-based organization (Produce, Dairy, Meat, Grains, Pantry Staples, Frozen, etc.)
+- Search and filter functionality for quick ingredient lookup
+- Expiration date warnings to reduce food waste
+- Smart shopping list integration - automatically excludes items already in your pantry
+- Notes field for additional details (location, brand, storage notes)
 
 #### Nutrition Tracking
 - Comprehensive nutritional analysis with macro and micronutrient tracking
