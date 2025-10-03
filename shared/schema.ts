@@ -183,6 +183,21 @@ export const shoppingLists = pgTable("shopping_lists", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Pantry Inventory - household-level ingredient tracking
+export const pantryItems = pgTable("pantry_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  householdId: varchar("household_id").notNull().references(() => households.id),
+  ingredientName: text("ingredient_name").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unit: text("unit").notNull(), // lb, oz, cups, each, etc.
+  category: text("category"), // produce, dairy, grains, meat, pantry_staples, frozen, etc.
+  expirationDate: timestamp("expiration_date"),
+  purchaseDate: timestamp("purchase_date").defaultNow(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Grocery Prices (unchanged)
 export const groceryPrices = pgTable("grocery_prices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -270,6 +285,13 @@ export const insertShoppingListSchema = createInsertSchema(shoppingLists).omit({
   isCompleted: true,
 });
 
+export const insertPantryItemSchema = createInsertSchema(pantryItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  purchaseDate: true,
+});
+
 export const insertGroceryPriceSchema = createInsertSchema(groceryPrices).omit({
   id: true,
   lastUpdated: true,
@@ -312,6 +334,9 @@ export type InsertMealPlan = z.infer<typeof insertMealPlanSchema>;
 
 export type ShoppingList = typeof shoppingLists.$inferSelect;
 export type InsertShoppingList = z.infer<typeof insertShoppingListSchema>;
+
+export type PantryItem = typeof pantryItems.$inferSelect;
+export type InsertPantryItem = z.infer<typeof insertPantryItemSchema>;
 
 export type GroceryPrice = typeof groceryPrices.$inferSelect;
 export type InsertGroceryPrice = z.infer<typeof insertGroceryPriceSchema>;
