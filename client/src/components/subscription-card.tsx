@@ -11,7 +11,7 @@ const PRICING_PLANS = {
   basic: {
     name: "Basic",
     price: "£9.99",
-    priceId: process.env.VITE_STRIPE_BASIC_PRICE_ID || "price_basic",
+    priceId: import.meta.env.VITE_STRIPE_BASIC_PRICE_ID || "price_basic",
     features: [
       "Weekly meal plans for 1-2 people",
       "Up to 100 recipes",
@@ -22,7 +22,7 @@ const PRICING_PLANS = {
   premium: {
     name: "Premium",
     price: "£19.99",
-    priceId: process.env.VITE_STRIPE_PREMIUM_PRICE_ID || "price_premium",
+    priceId: import.meta.env.VITE_STRIPE_PREMIUM_PRICE_ID || "price_premium",
     features: [
       "Unlimited family members",
       "500+ diverse recipes",
