@@ -18,6 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { User, Settings, Bell, Target, Users, Utensils, Heart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { SubscriptionCard } from "@/components/subscription-card";
 
 const profileUpdateSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -714,6 +715,9 @@ export default function Profile() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Subscription Management */}
+              <SubscriptionCard />
             </TabsContent>
 
             {/* Save Button */}

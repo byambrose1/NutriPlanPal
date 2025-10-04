@@ -2,20 +2,28 @@ import Stripe from "stripe";
 import { Router, type Request } from "express";
 import { storage } from "./storage";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-12-18.acacia",
-});
-
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+
+// Initialize Stripe only if API key is available
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, {
+  apiVersion: "2024-12-18.acacia",
+}) : null;
 
 export const stripeRouter = Router();
 
+// Middleware to check if Stripe is configured
+const requireStripe = (req: any, res: any, next: any) => {
+  if (!stripe) {
+    return res.status(503).json({ 
+      message: "Stripe is not configured. Please add STRIPE_SECRET_KEY to environment variables." 
+    });
+  }
+  next();
+};
+
 // Create Checkout Session for Subscription
-stripeRouter.post("/create-checkout-session", async (req, res) => {
+stripeRouter.post("/create-checkout-session", requireStripe, async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -30,7 +38,7 @@ stripeRouter.post("/create-checkout-session", async (req, res) => {
 
     // Create or retrieve Stripe customer
     let customerId = user.stripeCustomerId;
-    if (!customerId) {
+    if (!customerId && stripe) {
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: {
@@ -49,7 +57,7 @@ stripeRouter.post("/create-checkout-session", async (req, res) => {
       : req.headers.origin || `${req.protocol}://${req.get('host')}`;
 
     // Create Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    const session = await stripe!.checkout.sessions.create({
       customer: customerId,
       line_items: [
         {
@@ -74,7 +82,7 @@ stripeRouter.post("/create-checkout-session", async (req, res) => {
 });
 
 // Create Customer Portal Session
-stripeRouter.post("/create-portal-session", async (req, res) => {
+stripeRouter.post("/create-portal-session", requireStripe, async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -91,7 +99,7 @@ stripeRouter.post("/create-portal-session", async (req, res) => {
       ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
       : req.headers.origin || `${req.protocol}://${req.get('host')}`;
 
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await stripe!.billingPortal.sessions.create({
       customer: user.stripeCustomerId,
       return_url: `${domain}/profile`,
     });
@@ -104,7 +112,7 @@ stripeRouter.post("/create-portal-session", async (req, res) => {
 });
 
 // Stripe Webhook Handler
-stripeRouter.post("/webhook", async (req: Request, res) => {
+stripeRouter.post("/webhook", requireStripe, async (req: Request, res) => {
   const sig = req.headers['stripe-signature'];
 
   if (!sig) {
@@ -114,13 +122,16 @@ stripeRouter.post("/webhook", async (req: Request, res) => {
   let event: Stripe.Event;
 
   try {
+    // Get raw body from request (either as Buffer or string)
+    const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
+    
     // Verify webhook signature
     if (WEBHOOK_SECRET) {
-      event = stripe.webhooks.constructEvent(req.body, sig, WEBHOOK_SECRET);
+      event = stripe!.webhooks.constructEvent(rawBody, sig, WEBHOOK_SECRET);
     } else {
       // For testing without webhook secret
       console.warn("Warning: No webhook secret configured, skipping verification");
-      event = JSON.parse(req.body.toString());
+      event = JSON.parse(rawBody.toString());
     }
   } catch (err: any) {
     console.error(`Webhook signature verification failed: ${err.message}`);

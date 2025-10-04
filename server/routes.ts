@@ -22,8 +22,12 @@ import express from "express";
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
-  // Mount Stripe routes (webhook needs raw body, so it must be before other middleware)
-  app.use("/api/stripe", express.raw({ type: 'application/json' }), stripeRouter);
+  // Mount Stripe webhook specifically (needs raw body for signature verification)
+  // This must be mounted separately before JSON middleware
+  app.use("/api/stripe/webhook", express.raw({ type: 'application/json' }));
+  
+  // Mount remaining Stripe routes
+  app.use("/api/stripe", stripeRouter);
 
   // Authentication endpoints
   app.get("/api/auth/user", isAuthenticated, async (req, res) => {
