@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { stripeRouter } from "./stripe";
 import { 
   insertHouseholdSchema,
   insertHouseholdMemberSchema,
@@ -16,9 +17,13 @@ import {
 } from "@shared/schema";
 import { generateRecipe, generateWeeklyMealPlan } from "./services/openai";
 import { z } from "zod";
+import express from "express";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
+
+  // Mount Stripe routes (webhook needs raw body, so it must be before other middleware)
+  app.use("/api/stripe", express.raw({ type: 'application/json' }), stripeRouter);
 
   // Authentication endpoints
   app.get("/api/auth/user", isAuthenticated, async (req, res) => {

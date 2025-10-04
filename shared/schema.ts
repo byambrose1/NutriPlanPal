@@ -43,6 +43,14 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  
+  // Stripe Subscription Fields
+  stripeCustomerId: varchar("stripe_customer_id").unique(),
+  stripeSubscriptionId: varchar("stripe_subscription_id").unique(),
+  subscriptionStatus: text("subscription_status").default('free'), // free, active, canceled, past_due, trialing
+  subscriptionTier: text("subscription_tier").default('free'), // free, basic, premium
+  subscriptionPeriodEnd: timestamp("subscription_period_end"),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

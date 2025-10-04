@@ -34,6 +34,16 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
+  // Subscription Management
+  updateUserSubscription(userId: string, subscriptionData: {
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    subscriptionStatus?: string;
+    subscriptionTier?: string;
+    subscriptionPeriodEnd?: Date;
+  }): Promise<User | undefined>;
+  getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
+  
   // Households
   getHousehold(id: string): Promise<Household | undefined>;
   getUserHousehold(userId: string): Promise<Household | undefined>;
@@ -161,12 +171,41 @@ export class MemStorage implements IStorage {
         firstName: upsertData.firstName || null,
         lastName: upsertData.lastName || null,
         profileImageUrl: upsertData.profileImageUrl || null,
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        subscriptionStatus: 'free',
+        subscriptionTier: 'free',
+        subscriptionPeriodEnd: null,
         createdAt: new Date(),
         updatedAt: new Date()
       };
       this.users.set(newUser.id, newUser);
       return newUser;
     }
+  }
+
+  // Subscription methods
+  async updateUserSubscription(userId: string, subscriptionData: {
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    subscriptionStatus?: string;
+    subscriptionTier?: string;
+    subscriptionPeriodEnd?: Date;
+  }): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+
+    const updated: User = {
+      ...user,
+      ...subscriptionData,
+      updatedAt: new Date()
+    };
+    this.users.set(userId, updated);
+    return updated;
+  }
+
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.stripeCustomerId === customerId);
   }
 
   // Household methods
