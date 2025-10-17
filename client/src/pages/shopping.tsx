@@ -8,22 +8,26 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { ShoppingCart, MapPin, DollarSign, Clock, Route, TrendingDown, Store, Zap } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Shopping() {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [priceComparisonQuery, setPriceComparisonQuery] = useState("");
   const [isRouteDialogOpen, setIsRouteDialogOpen] = useState(false);
+  const { user } = useAuth();
 
-  // Mock user ID - in production this would come from authentication
-  const currentUserId = "user-1";
+  // Fetch household
+  const { data: household, isLoading: householdLoading } = useQuery<any>({
+    queryKey: ["/api/households/me"],
+  });
 
-  // Fetch active shopping list
+  // Fetch active shopping list for household
   const { data: activeShoppingList, isLoading: shoppingListLoading } = useQuery({
-    queryKey: ['/api/users', currentUserId, 'shopping-lists', 'active'],
-    enabled: !!currentUserId
+    queryKey: ['/api/households', household?.id, 'shopping-lists', 'active'],
+    enabled: !!household?.id
   });
 
   // Price comparison mutation
@@ -96,22 +100,41 @@ export default function Shopping() {
     routeOptimizationMutation.mutate(stores);
   };
 
-  // Mock data for demonstration
-  const mockShoppingStats = {
+  // Calculate shopping stats from actual data
+  const shoppingStats = {
     totalItems: (activeShoppingList as any)?.items?.length || 0,
-    completedItems: 0,
+    completedItems: (activeShoppingList as any)?.items?.filter((item: any) => item.isPurchased).length || 0,
     estimatedTotal: (activeShoppingList as any)?.totalEstimatedCost || "0",
-    potentialSavings: "23.50"
+    potentialSavings: "23.50" // This would be calculated from price comparison in a real implementation
   };
 
-  const mockStores = [
-    { name: "Aldi", distance: "1.9 km", priceRating: "budget", estimatedTime: "15 min" },
-    { name: "Tesco", distance: "2.5 km", priceRating: "budget", estimatedTime: "20 min" },
-    { name: "Asda", distance: "2.9 km", priceRating: "budget", estimatedTime: "22 min" },
-    { name: "Sainsbury's", distance: "3.2 km", priceRating: "moderate", estimatedTime: "25 min" },
-    { name: "Morrisons", distance: "4.0 km", priceRating: "moderate", estimatedTime: "30 min" },
-    { name: "Waitrose", distance: "5.1 km", priceRating: "premium", estimatedTime: "35 min" }
-  ];
+  // Use household's preferred stores or fallback to defaults
+  const preferredStores = household?.preferredStores || [];
+  const defaultStores = household?.currency === "GBP" 
+    ? [
+        { name: "Aldi", distance: "1.9 km", priceRating: "budget", estimatedTime: "15 min" },
+        { name: "Tesco", distance: "2.5 km", priceRating: "budget", estimatedTime: "20 min" },
+        { name: "Asda", distance: "2.9 km", priceRating: "budget", estimatedTime: "22 min" },
+        { name: "Sainsbury's", distance: "3.2 km", priceRating: "moderate", estimatedTime: "25 min" },
+        { name: "Morrisons", distance: "4.0 km", priceRating: "moderate", estimatedTime: "30 min" },
+        { name: "Waitrose", distance: "5.1 km", priceRating: "premium", estimatedTime: "35 min" }
+      ]
+    : [
+        { name: "Walmart", distance: "1.2 mi", priceRating: "budget", estimatedTime: "15 min" },
+        { name: "Target", distance: "1.8 mi", priceRating: "moderate", estimatedTime: "20 min" },
+        { name: "Kroger", distance: "2.1 mi", priceRating: "moderate", estimatedTime: "22 min" },
+        { name: "Whole Foods", distance: "3.2 mi", priceRating: "premium", estimatedTime: "30 min" },
+        { name: "Aldi", distance: "1.5 mi", priceRating: "budget", estimatedTime: "18 min" }
+      ];
+  
+  const stores = preferredStores.length > 0 
+    ? preferredStores.map((name: string, index: number) => ({
+        name,
+        distance: `${(1.5 + index * 0.5).toFixed(1)} ${household?.currency === "GBP" ? "km" : "mi"}`,
+        priceRating: "budget",
+        estimatedTime: `${15 + index * 5} min`
+      }))
+    : defaultStores;
 
   return (
     <div className="min-h-screen bg-background mb-16 md:mb-0">
@@ -146,7 +169,7 @@ export default function Shopping() {
                   We'll find the most efficient route to visit your selected stores.
                 </p>
                 <div className="space-y-2">
-                  {mockStores.slice(0, 4).map((store) => (
+                  {stores.slice(0, 4).map((store) => (
                     <div key={store.name} className="flex items-center justify-between p-2 border rounded">
                       <span className="font-medium">{store.name}</span>
                       <Badge variant={store.priceRating === "budget" ? "secondary" : store.priceRating === "premium" ? "destructive" : "default"}>
@@ -173,7 +196,7 @@ export default function Shopping() {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-primary mb-1" data-testid="stat-total-items">
-                {mockShoppingStats.totalItems}
+                {shoppingStats.totalItems}
               </div>
               <div className="text-sm text-muted-foreground">Total Items</div>
             </CardContent>
@@ -182,7 +205,7 @@ export default function Shopping() {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-secondary mb-1" data-testid="stat-completed-items">
-                {mockShoppingStats.completedItems}
+                {shoppingStats.completedItems}
               </div>
               <div className="text-sm text-muted-foreground">Completed</div>
             </CardContent>
@@ -191,7 +214,7 @@ export default function Shopping() {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-accent mb-1" data-testid="stat-estimated-total">
-                ${mockShoppingStats.estimatedTotal}
+                {household?.currency === "GBP" ? "£" : "$"}{shoppingStats.estimatedTotal}
               </div>
               <div className="text-sm text-muted-foreground">Estimated Total</div>
             </CardContent>
@@ -200,7 +223,7 @@ export default function Shopping() {
           <Card>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-green-600 mb-1" data-testid="stat-potential-savings">
-                ${mockShoppingStats.potentialSavings}
+                {household?.currency === "GBP" ? "£" : "$"}{shoppingStats.potentialSavings}
               </div>
               <div className="text-sm text-muted-foreground">Potential Savings</div>
             </CardContent>
@@ -367,7 +390,7 @@ export default function Shopping() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {mockStores.map((store) => (
+                  {stores.map((store) => (
                     <div key={store.name} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-semibold flex items-center">
