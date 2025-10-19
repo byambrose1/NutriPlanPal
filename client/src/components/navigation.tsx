@@ -1,16 +1,23 @@
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Home, BookOpen, ShoppingCart, User, Utensils, Bell, Activity } from "lucide-react";
+import { Home, BookOpen, ShoppingCart, User, Utensils, Bell, Activity, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 
 export function Navigation() {
   const [location] = useLocation();
+  
+  const { data: user } = useQuery({
+    queryKey: ['/api/auth/user']
+  });
 
   const isActive = (path: string) => {
     if (path === "/" && location === "/") return true;
     if (path !== "/" && location.startsWith(path)) return true;
     return false;
   };
+  
+  const isAdmin = user?.isAdmin || false;
 
   return (
     <>
@@ -91,6 +98,21 @@ export function Navigation() {
                   Profile
                 </Button>
               </Link>
+              {isAdmin && (
+                <Link href="/admin">
+                  <Button 
+                    variant={isActive("/admin") ? "default" : "ghost"}
+                    className={cn(
+                      "px-4 py-2 font-medium transition-colors",
+                      isActive("/admin") && "navigation-active"
+                    )}
+                    data-testid="nav-admin"
+                  >
+                    <Shield className="mr-2 h-4 w-4" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
             </nav>
             
             <div className="flex items-center space-x-3">
