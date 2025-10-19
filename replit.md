@@ -76,7 +76,7 @@ Preferred communication style: Simple, everyday language.
 - Family-wide nutrition management with individual dietary considerations
 - Weekly and monthly nutrition reports with interactive charts and trend analysis
 
-#### Subscription Management (NEW)
+#### Subscription Management
 - Two-tier subscription model: Basic ($9.99/month) and Premium ($19.99/month)
 - Stripe-powered payment processing with hosted Checkout and Customer Portal
 - Automatic subscription lifecycle management via webhooks
@@ -85,6 +85,20 @@ Preferred communication style: Simple, everyday language.
   - **Basic Tier**: Up to 10 household members, basic meal plans, standard recipes
   - **Premium Tier**: Unlimited household members, AI-powered meal plans, advanced nutrition tracking
 - User-friendly subscription management in profile settings with one-click upgrades and portal access
+
+#### Admin Panel (NEW)
+- Comprehensive admin dashboard with platform-wide metrics and analytics
+- User management with search, filtering, and account controls
+- View and manage user subscriptions and admin roles
+- Household monitoring with detailed member information
+- Real-time analytics with interactive charts for user growth, revenue, and engagement
+- Admin-only navigation and route protection
+- Features:
+  - **Dashboard**: Key metrics including total users, households, revenue, and meal plans
+  - **User Management**: Search users, view details, modify subscriptions, grant/revoke admin access
+  - **Household Management**: View all households with owner and member information
+  - **Analytics**: Detailed charts showing user growth, revenue trends, and platform engagement over time
+- Access control via `isAdmin` flag in user profiles
 
 ### Development and Deployment Architecture
 - **Build System**: Vite for frontend bundling with esbuild for backend compilation
