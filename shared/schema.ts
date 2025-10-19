@@ -44,6 +44,9 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   
+  // Admin Role
+  isAdmin: boolean("is_admin").default(false),
+  
   // Stripe Subscription Fields
   stripeCustomerId: varchar("stripe_customer_id").unique(),
   stripeSubscriptionId: varchar("stripe_subscription_id").unique(),
