@@ -21,16 +21,16 @@ export default function AdminHouseholds() {
   return (
     <AdminLayout>
       <div className="p-8 space-y-6">
-      <div>
+        <div>
         <h1 className="text-3xl font-bold mb-2" data-testid="heading-household-management">
           Household Management
         </h1>
         <p className="text-muted-foreground">
           View all households and their members
         </p>
-      </div>
+        </div>
 
-      <Card>
+        <Card>
         <CardHeader>
           <CardTitle>
             Households ({total})
@@ -142,7 +142,7 @@ export default function AdminHouseholds() {
             </>
           )}
         </CardContent>
-      </Card>
+        </Card>
       </div>
     </AdminLayout>
   );

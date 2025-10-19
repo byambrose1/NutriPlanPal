@@ -58,7 +58,7 @@ export default function AdminAnalytics() {
   return (
     <AdminLayout>
       <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2" data-testid="heading-analytics">
             Platform Analytics
@@ -77,10 +77,10 @@ export default function AdminAnalytics() {
             <SelectItem value="year">Last 12 Months</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+        </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {summaryCards.map((card) => {
           const Icon = card.icon;
           return (
@@ -103,10 +103,10 @@ export default function AdminAnalytics() {
             </Card>
           );
         })}
-      </div>
+        </div>
 
-      {/* User Growth Chart */}
-      <Card>
+        {/* User Growth Chart */}
+        <Card>
         <CardHeader>
           <CardTitle>User Growth</CardTitle>
         </CardHeader>
@@ -123,10 +123,10 @@ export default function AdminAnalytics() {
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
-      </Card>
+        </Card>
 
-      {/* Revenue Chart */}
-      <Card>
+        {/* Revenue Chart */}
+        <Card>
         <CardHeader>
           <CardTitle>Revenue & Subscriptions</CardTitle>
         </CardHeader>
@@ -143,10 +143,10 @@ export default function AdminAnalytics() {
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
-      </Card>
+        </Card>
 
-      {/* Engagement Chart */}
-      <Card>
+        {/* Engagement Chart */}
+        <Card>
         <CardHeader>
           <CardTitle>Platform Engagement</CardTitle>
         </CardHeader>
@@ -162,7 +162,7 @@ export default function AdminAnalytics() {
             </LineChart>
           </ResponsiveContainer>
         </CardContent>
-      </Card>
+        </Card>
       </div>
     </AdminLayout>
   );

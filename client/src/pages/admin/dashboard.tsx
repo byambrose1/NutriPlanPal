@@ -78,17 +78,17 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       <div className="p-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2" data-testid="heading-admin-dashboard">
-          Admin Dashboard
-        </h1>
-        <p className="text-muted-foreground">
-          Platform overview and key metrics
-        </p>
-      </div>
+        <div>
+          <h1 className="text-3xl font-bold mb-2" data-testid="heading-admin-dashboard">
+            Admin Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Platform overview and key metrics
+          </p>
+        </div>
 
-      {/* Main Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Main Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -119,10 +119,10 @@ export default function AdminDashboard() {
             </Card>
           );
         })}
-      </div>
+        </div>
 
-      {/* Subscription Overview */}
-      <Card>
+        {/* Subscription Overview */}
+        <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <UserCheck className="w-5 h-5 mr-2" />
@@ -169,10 +169,10 @@ export default function AdminDashboard() {
             </div>
           </div>
         </CardContent>
-      </Card>
+        </Card>
 
-      {/* Additional Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Additional Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
             </a>
           </CardContent>
         </Card>
-      </div>
+        </div>
       </div>
     </AdminLayout>
   );

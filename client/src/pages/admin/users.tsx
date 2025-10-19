@@ -96,17 +96,17 @@ export default function AdminUsers() {
   return (
     <AdminLayout>
       <div className="p-8 space-y-6">
-      <div>
+        <div>
         <h1 className="text-3xl font-bold mb-2" data-testid="heading-user-management">
           User Management
         </h1>
         <p className="text-muted-foreground">
           Manage user accounts and subscriptions
         </p>
-      </div>
+        </div>
 
-      {/* Filters */}
-      <Card>
+        {/* Filters */}
+        <Card>
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
@@ -141,10 +141,10 @@ export default function AdminUsers() {
             </Select>
           </div>
         </CardContent>
-      </Card>
+        </Card>
 
-      {/* Users Table */}
-      <Card>
+        {/* Users Table */}
+        <Card>
         <CardHeader>
           <CardTitle>
             Users ({total})
@@ -251,10 +251,10 @@ export default function AdminUsers() {
             </>
           )}
         </CardContent>
-      </Card>
+        </Card>
 
-      {/* User Details Dialog */}
-      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+        {/* User Details Dialog */}
+        <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
@@ -353,7 +353,7 @@ export default function AdminUsers() {
             </div>
           )}
         </DialogContent>
-      </Dialog>
+        </Dialog>
       </div>
     </AdminLayout>
   );
