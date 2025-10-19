@@ -19,6 +19,25 @@ import { generateRecipe, generateWeeklyMealPlan } from "./services/openai";
 import { z } from "zod";
 import express from "express";
 
+// Admin middleware - check if user has admin privileges
+const isAdmin = async (req: any, res: any, next: any) => {
+  try {
+    const claims = req.user?.claims;
+    if (!claims) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const user = await storage.getUser(claims.sub);
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    next();
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
@@ -540,6 +559,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const report = await storage.getMemberNutritionReport(memberId, startDate, endDate);
       res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // ============================================
+  // ADMIN ENDPOINTS
+  // ============================================
+
+  // Admin - Get platform statistics
+  app.get("/api/admin/stats", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getAdminStats();
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Admin - Get all users with pagination
+  app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const search = req.query.search as string;
+      const subscriptionTier = req.query.subscriptionTier as string;
+      
+      const result = await storage.getUsers({ page, limit, search, subscriptionTier });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Admin - Get user details with household
+  app.get("/api/admin/users/:userId", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const household = await storage.getUserHousehold(req.params.userId);
+      const members = household ? await storage.getHouseholdMembers(household.id) : [];
+      
+      res.json({ user, household, members });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Admin - Update user subscription
+  app.patch("/api/admin/users/:userId/subscription", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { subscriptionTier, subscriptionStatus } = req.body;
+      const user = await storage.updateUserSubscription(req.params.userId, {
+        subscriptionTier,
+        subscriptionStatus
+      });
+      res.json(user);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Admin - Toggle admin status
+  app.patch("/api/admin/users/:userId/admin", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { isAdmin: makeAdmin } = req.body;
+      const user = await storage.updateUserAdminStatus(req.params.userId, makeAdmin);
+      res.json(user);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Admin - Get all households
+  app.get("/api/admin/households", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      const result = await storage.getAllHouseholds({ page, limit });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Admin - Get analytics data
+  app.get("/api/admin/analytics", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const period = req.query.period as string || 'month'; // week, month, year
+      const analytics = await storage.getAnalytics(period);
+      res.json(analytics);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

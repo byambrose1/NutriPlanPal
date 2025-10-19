@@ -103,6 +103,13 @@ export interface IStorage {
   
   // Nutrition Reports
   getMemberNutritionReport(householdMemberId: string, startDate: Date, endDate: Date): Promise<any>;
+  
+  // Admin Methods
+  getAdminStats(): Promise<any>;
+  getUsers(params: { page: number; limit: number; search?: string; subscriptionTier?: string }): Promise<{ users: User[]; total: number }>;
+  updateUserAdminStatus(userId: string, isAdmin: boolean): Promise<User | undefined>;
+  getAllHouseholds(params: { page: number; limit: number }): Promise<{ households: any[]; total: number }>;
+  getAnalytics(period: string): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -616,6 +623,169 @@ export class MemStorage implements IStorage {
       periodStart: startDate,
       periodEnd: endDate,
       daysTracked: daysCount
+    };
+  }
+
+  // ============================================
+  // ADMIN METHODS
+  // ============================================
+
+  async getAdminStats(): Promise<any> {
+    const totalUsers = this.users.size;
+    const totalHouseholds = this.households.size;
+    const totalMembers = this.householdMembers.size;
+    const totalRecipes = this.recipes.size;
+    const totalMealPlans = this.mealPlans.size;
+    
+    // Count subscriptions by tier
+    const subscriptionTiers = {
+      free: 0,
+      basic: 0,
+      premium: 0
+    };
+    
+    const subscriptionStatuses = {
+      active: 0,
+      canceled: 0,
+      past_due: 0,
+      trialing: 0
+    };
+
+    let monthlyRevenue = 0;
+    
+    this.users.forEach(user => {
+      const tier = user.subscriptionTier || 'free';
+      subscriptionTiers[tier as keyof typeof subscriptionTiers]++;
+      
+      if (user.subscriptionStatus && user.subscriptionStatus !== 'free') {
+        subscriptionStatuses[user.subscriptionStatus as keyof typeof subscriptionStatuses]++;
+      }
+      
+      // Calculate revenue
+      if (user.subscriptionTier === 'basic') {
+        monthlyRevenue += 9.99;
+      } else if (user.subscriptionTier === 'premium') {
+        monthlyRevenue += 19.99;
+      }
+    });
+
+    // Calculate growth (mock data for now)
+    const userGrowth = 12.5; // percentage
+    const revenueGrowth = 18.3;
+
+    return {
+      totalUsers,
+      totalHouseholds,
+      totalMembers,
+      totalRecipes,
+      totalMealPlans,
+      subscriptionTiers,
+      subscriptionStatuses,
+      monthlyRevenue: monthlyRevenue.toFixed(2),
+      userGrowth,
+      revenueGrowth
+    };
+  }
+
+  async getUsers(params: { page: number; limit: number; search?: string; subscriptionTier?: string }): Promise<{ users: User[]; total: number }> {
+    let users = Array.from(this.users.values());
+    
+    // Apply search filter
+    if (params.search) {
+      const search = params.search.toLowerCase();
+      users = users.filter(user => 
+        user.email?.toLowerCase().includes(search) ||
+        user.firstName?.toLowerCase().includes(search) ||
+        user.lastName?.toLowerCase().includes(search)
+      );
+    }
+    
+    // Apply subscription tier filter
+    if (params.subscriptionTier) {
+      users = users.filter(user => user.subscriptionTier === params.subscriptionTier);
+    }
+    
+    const total = users.length;
+    
+    // Apply pagination
+    const start = (params.page - 1) * params.limit;
+    const paginatedUsers = users.slice(start, start + params.limit);
+    
+    return { users: paginatedUsers, total };
+  }
+
+  async updateUserAdminStatus(userId: string, isAdmin: boolean): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, isAdmin, updatedAt: new Date() };
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+
+  async getAllHouseholds(params: { page: number; limit: number }): Promise<{ households: any[]; total: number }> {
+    const households = Array.from(this.households.values());
+    
+    // Enrich with owner and member count
+    const enrichedHouseholds = await Promise.all(
+      households.map(async household => {
+        const owner = this.users.get(household.ownerId);
+        const members = Array.from(this.householdMembers.values()).filter(
+          m => m.householdId === household.id
+        );
+        
+        return {
+          ...household,
+          ownerName: owner ? `${owner.firstName} ${owner.lastName}` : 'Unknown',
+          ownerEmail: owner?.email,
+          memberCount: members.length
+        };
+      })
+    );
+    
+    const total = enrichedHouseholds.length;
+    
+    // Apply pagination
+    const start = (params.page - 1) * params.limit;
+    const paginatedHouseholds = enrichedHouseholds.slice(start, start + params.limit);
+    
+    return { households: paginatedHouseholds, total };
+  }
+
+  async getAnalytics(period: string): Promise<any> {
+    const now = new Date();
+    const periodData: any[] = [];
+    
+    // Generate mock analytics data for the period
+    const dataPoints = period === 'year' ? 12 : period === 'month' ? 30 : 7;
+    
+    for (let i = dataPoints - 1; i >= 0; i--) {
+      const date = new Date(now);
+      if (period === 'year') {
+        date.setMonth(date.getMonth() - i);
+      } else {
+        date.setDate(date.getDate() - i);
+      }
+      
+      periodData.push({
+        date: date.toISOString().split('T')[0],
+        newUsers: Math.floor(Math.random() * 20) + 5,
+        activeUsers: Math.floor(Math.random() * 100) + 50,
+        newSubscriptions: Math.floor(Math.random() * 10) + 2,
+        revenue: (Math.random() * 500 + 100).toFixed(2),
+        mealPlansGenerated: Math.floor(Math.random() * 50) + 10
+      });
+    }
+
+    return {
+      period,
+      data: periodData,
+      summary: {
+        totalNewUsers: periodData.reduce((sum, d) => sum + d.newUsers, 0),
+        avgActiveUsers: Math.floor(periodData.reduce((sum, d) => sum + d.activeUsers, 0) / dataPoints),
+        totalRevenue: periodData.reduce((sum, d) => sum + parseFloat(d.revenue), 0).toFixed(2),
+        totalMealPlans: periodData.reduce((sum, d) => sum + d.mealPlansGenerated, 0)
+      }
     };
   }
 }
