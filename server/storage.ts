@@ -153,7 +153,26 @@ export class MemStorage implements IStorage {
 
   // User methods - Required for Replit Auth
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const memUser = this.users.get(id);
+    if (!memUser) return undefined;
+    
+    // Check database for isAdmin flag
+    try {
+      const { neon } = await import("@neondatabase/serverless");
+      const sql = neon(process.env.DATABASE_URL!);
+      const dbUsers = await sql`SELECT is_admin FROM users WHERE id = ${id} LIMIT 1`;
+      
+      if (dbUsers && dbUsers.length > 0) {
+        return {
+          ...memUser,
+          isAdmin: dbUsers[0].is_admin || false
+        };
+      }
+    } catch (error) {
+      console.error("Error fetching isAdmin from database:", error);
+    }
+    
+    return memUser;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
