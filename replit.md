@@ -86,19 +86,23 @@ Preferred communication style: Simple, everyday language.
   - **Premium Tier**: Unlimited household members, AI-powered meal plans, advanced nutrition tracking
 - User-friendly subscription management in profile settings with one-click upgrades and portal access
 
-#### Admin Panel (NEW)
+#### Admin Panel (NEW - Standalone Application)
+- **Completely separate admin application** running on port 8000 (independent from main app)
+- **Security architecture**: No admin access or routes visible in main application
+- **Independent uptime**: Admin panel stays accessible even if main site has issues
+- **Dedicated URL**: Access at `https://your-domain:8000` (separate from main app)
 - Comprehensive admin dashboard with platform-wide metrics and analytics
 - User management with search, filtering, and account controls
 - View and manage user subscriptions and admin roles
 - Household monitoring with detailed member information
 - Real-time analytics with interactive charts for user growth, revenue, and engagement
-- Admin-only navigation and route protection
 - Features:
   - **Dashboard**: Key metrics including total users, households, revenue, and meal plans
   - **User Management**: Search users, view details, modify subscriptions, grant/revoke admin access
   - **Household Management**: View all households with owner and member information
   - **Analytics**: Detailed charts showing user growth, revenue trends, and platform engagement over time
-- Access control via `isAdmin` flag in user profiles
+- Access control via `isAdmin` flag in user database records
+- **Login**: Authenticated through Replit Auth with admin privilege verification
 
 ### Development and Deployment Architecture
 - **Build System**: Vite for frontend bundling with esbuild for backend compilation
@@ -191,3 +195,28 @@ The app is designed to work without Stripe configuration:
 2. Configure webhook endpoint with live webhook secret
 3. Test complete subscription flow end-to-end
 4. Monitor webhook delivery in Stripe Dashboard
+
+## Admin Panel Access
+
+### Development Environment
+The admin panel runs as a completely separate application for security and reliability:
+
+1. **Admin URL**: Port 8000 (runs independently from main app on port 5000)
+2. **Access**: Look for the "Admin Panel" workflow in the Replit workspace
+3. **Login**: Use Replit Auth - only accounts with `isAdmin = true` in the database can access
+
+### Setting Up Admin Access
+To grant admin privileges to a user:
+
+```sql
+-- Connect to your database and run:
+UPDATE users SET is_admin = true WHERE email = 'your-admin-email@example.com';
+```
+
+Or use the database pane in Replit to update the `is_admin` field manually.
+
+### Why Standalone?
+- **Security**: Admin routes are completely isolated from the public-facing website
+- **Reliability**: If the main site has issues, admin panel remains accessible
+- **Performance**: Admin operations don't impact main application performance
+- **Separation of concerns**: Clear architectural boundary between user and admin functionality
