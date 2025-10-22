@@ -13,10 +13,6 @@ import Pantry from "@/pages/pantry";
 import NutritionReports from "@/pages/nutrition-reports";
 import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
-import AdminDashboard from "@/pages/admin/dashboard";
-import AdminUsers from "@/pages/admin/users";
-import AdminHouseholds from "@/pages/admin/households";
-import AdminAnalytics from "@/pages/admin/analytics";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -57,18 +53,6 @@ function Router() {
       </Route>
       <Route path="/profile">
         {isAuthenticated ? <Profile /> : <Redirect to="/" />}
-      </Route>
-      <Route path="/admin">
-        {isAuthenticated ? <AdminDashboard /> : <Redirect to="/" />}
-      </Route>
-      <Route path="/admin/users">
-        {isAuthenticated ? <AdminUsers /> : <Redirect to="/" />}
-      </Route>
-      <Route path="/admin/households">
-        {isAuthenticated ? <AdminHouseholds /> : <Redirect to="/" />}
-      </Route>
-      <Route path="/admin/analytics">
-        {isAuthenticated ? <AdminAnalytics /> : <Redirect to="/" />}
       </Route>
       <Route component={NotFound} />
     </Switch>
