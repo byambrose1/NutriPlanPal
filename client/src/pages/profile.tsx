@@ -184,8 +184,13 @@ export default function Profile() {
           {user?.isAdmin && (
             <Button
               onClick={() => {
-                const currentUrl = window.location.origin;
-                const adminUrl = currentUrl.replace(':5000', ':8000').replace('5000', '8000');
+                // Get the base URL from REPL domain
+                const currentHost = window.location.host;
+                // Replace port 5000 with 8000 for admin panel
+                const adminHost = currentHost.includes(':5000') 
+                  ? currentHost.replace(':5000', ':8000')
+                  : currentHost.replace(/\.replit\.dev$/, '-8000.replit.dev');
+                const adminUrl = `${window.location.protocol}//${adminHost}`;
                 window.open(adminUrl, '_blank');
               }}
               variant="outline"
