@@ -19,14 +19,6 @@ localPort = 8000
 externalPort = 8000
 
 [[ports]]
-localPort = 32915
-externalPort = 6800
-
-[[ports]]
-localPort = 34783
-externalPort = 8000
-
-[[ports]]
 localPort = 36175
 externalPort = 8008
 
@@ -98,9 +90,10 @@ waitForPort = 5000
 name = "Admin Panel"
 author = "agent"
 
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd admin-app && npx vite"
+waitForPort = 8000
+
 [workflows.workflow.metadata]
 outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Admin Panel"
