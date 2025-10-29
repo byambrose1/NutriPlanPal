@@ -68,10 +68,33 @@ export function importRecipesFromJSON(filePath: string) {
     // Determine if kid friendly based on tags
     const isKidFriendly = allTags.includes('family-friendly') || recipe.meal_type === 'Snack';
 
+    // Generate better recipe title based on main ingredients and cuisine
+    const mainIngredient = ingredients[0]?.name || 'Mixed';
+    const secondIngredient = ingredients[1]?.name || '';
+    let recipeTitle = '';
+    
+    // Create meaningful recipe names based on cuisine and ingredients
+    if (recipe.meal_type === 'Smoothie') {
+      recipeTitle = `${mainIngredient} ${secondIngredient ? '& ' + secondIngredient : ''} Smoothie`;
+    } else if (recipe.meal_type === 'Salad') {
+      recipeTitle = `${mainIngredient} ${recipe.cuisine} Salad`;
+    } else if (recipe.meal_type === 'Soup') {
+      recipeTitle = `${recipe.cuisine} ${mainIngredient} Soup`;
+    } else if (recipe.meal_type === 'Dessert') {
+      recipeTitle = `${recipe.cuisine}-Style ${mainIngredient} Dessert`;
+    } else if (recipe.meal_type === 'Breakfast') {
+      recipeTitle = `${recipe.cuisine} Breakfast with ${mainIngredient}`;
+    } else if (recipe.meal_type === 'Snack') {
+      recipeTitle = `${mainIngredient} ${recipe.cuisine} Bites`;
+    } else {
+      // Main courses
+      recipeTitle = `${recipe.cuisine} ${mainIngredient} ${secondIngredient ? 'with ' + secondIngredient : ''}`;
+    }
+
     return {
       id: `recipe-${randomUUID()}`,
-      title: recipe.name,
-      description: `Delicious ${recipe.cuisine} ${recipe.meal_type.toLowerCase()} with ${ingredients[0]?.name || 'fresh ingredients'}. ${allTags.includes('quick') ? 'Quick and easy to prepare!' : ''}`.trim(),
+      title: recipeTitle.trim(),
+      description: `Delicious ${recipe.cuisine.toLowerCase()} ${recipe.meal_type.toLowerCase()} featuring ${ingredients.slice(0, 3).map(i => i.name.toLowerCase()).join(', ')}. ${allTags.includes('quick') ? 'Quick and easy to prepare!' : 'Perfect for family meals.'}`.trim(),
       instructions: recipe.instructions,
       ingredients,
       prepTime: recipe.prep_time_mins,
