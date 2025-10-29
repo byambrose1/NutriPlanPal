@@ -102,6 +102,5 @@ author = "agent"
 outputType = "console"
 
 [[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd admin-app && npx vite"
-waitForPort = 8000
+task = "workflow.run"
+args = "Admin Panel"
