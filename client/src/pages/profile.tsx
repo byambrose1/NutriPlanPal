@@ -19,6 +19,7 @@ import { z } from "zod";
 import { User, Settings, Bell, Target, Users, Utensils, Heart, Shield, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { SubscriptionCard } from "@/components/subscription-card";
+import { useAuth } from "@/hooks/useAuth";
 
 const profileUpdateSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -74,6 +75,8 @@ const COMMON_DISLIKES = [
 ];
 
 export default function Profile() {
+  const { user, isLoading: authLoading } = useAuth();
+  
   const [notifications, setNotifications] = useState({
     mealPlanReminders: true,
     shoppingReminders: true,
@@ -81,25 +84,19 @@ export default function Profile() {
     weeklyReport: true
   });
 
-  // Mock user ID - in production this would come from authentication
-  const currentUserId = "user-1";
-
   // Fetch user profile
-  const { data: userProfile, isLoading } = useQuery({
-    queryKey: ['/api/users', currentUserId, 'profile'],
-    enabled: !!currentUserId
+  const { data: userProfile, isLoading: profileLoading } = useQuery({
+    queryKey: ['/api/users', user?.id, 'profile'],
+    enabled: !!user?.id
   });
 
   // Fetch user data
   const { data: userData } = useQuery({
-    queryKey: ['/api/users', currentUserId],
-    enabled: !!currentUserId
+    queryKey: ['/api/users', user?.id],
+    enabled: !!user?.id
   });
 
-  // Fetch current auth user to check admin status
-  const { data: authUser } = useQuery({
-    queryKey: ['/api/auth/user']
-  });
+  const isLoading = authLoading || profileLoading;
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<ProfileUpdateData>({
     resolver: zodResolver(profileUpdateSchema),
@@ -124,7 +121,7 @@ export default function Profile() {
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (profileData: Partial<ProfileUpdateData>) => {
-      const response = await fetch(`/api/users/${currentUserId}/profile`, {
+      const response = await fetch(`/api/users/${user?.id}/profile`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -136,7 +133,7 @@ export default function Profile() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', currentUserId, 'profile'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users', user?.id, 'profile'] });
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
@@ -204,7 +201,7 @@ export default function Profile() {
               Manage your account and customize your meal planning experience
             </p>
           </div>
-          {authUser?.isAdmin && (
+          {user?.isAdmin && (
             <Button
               onClick={() => {
                 const currentUrl = window.location.origin;
