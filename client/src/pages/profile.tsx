@@ -100,9 +100,9 @@ export default function Profile() {
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<ProfileUpdateData>({
     resolver: zodResolver(profileUpdateSchema),
-    defaultValues: {
-      name: userData?.name || "",
-      email: userData?.email || "",
+    values: {
+      name: userData?.name || user?.name || "",
+      email: userData?.email || user?.email || "",
       familySize: userProfile?.familySize || 4,
       weeklyBudget: parseFloat(userProfile?.weeklyBudget || "150"),
       dietaryRestrictions: userProfile?.dietaryRestrictions || [],
