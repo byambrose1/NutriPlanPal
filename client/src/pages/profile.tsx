@@ -16,7 +16,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { User, Settings, Bell, Target, Users, Utensils, Heart } from "lucide-react";
+import { User, Settings, Bell, Target, Users, Utensils, Heart, Shield, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { SubscriptionCard } from "@/components/subscription-card";
 
@@ -94,6 +94,11 @@ export default function Profile() {
   const { data: userData } = useQuery({
     queryKey: ['/api/users', currentUserId],
     enabled: !!currentUserId
+  });
+
+  // Fetch current auth user to check admin status
+  const { data: authUser } = useQuery({
+    queryKey: ['/api/auth/user']
   });
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<ProfileUpdateData>({
@@ -199,6 +204,22 @@ export default function Profile() {
               Manage your account and customize your meal planning experience
             </p>
           </div>
+          {authUser?.isAdmin && (
+            <Button
+              onClick={() => {
+                const currentUrl = window.location.origin;
+                const adminUrl = currentUrl.replace(':5000', ':8000').replace('5000', '8000');
+                window.open(adminUrl, '_blank');
+              }}
+              variant="outline"
+              className="flex items-center gap-2"
+              data-testid="admin-panel-link"
+            >
+              <Shield className="h-4 w-4" />
+              Admin Panel
+              <ExternalLink className="h-3 w-3" />
+            </Button>
+          )}
           
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
