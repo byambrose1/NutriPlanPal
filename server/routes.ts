@@ -312,7 +312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const mealPlan = await storage.getActiveMealPlan(req.params.memberId);
       if (!mealPlan) {
-        return res.status(404).json({ message: "No active meal plan found" });
+        return res.json(null);
       }
       res.json(mealPlan);
     } catch (error: any) {
@@ -337,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mealPlanData = await generateWeeklyMealPlan({
         member,
         household,
-        preferences
+        preferences: preferences || undefined
       });
 
       if (!mealPlanData) {
@@ -354,7 +354,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(mealPlan);
     } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      console.error("Error generating meal plan:", error);
+      res.status(500).json({ message: error.message });
     }
   });
 

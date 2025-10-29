@@ -272,25 +272,35 @@ export class DbStorage implements IStorage {
   }
 
   async getActiveMealPlan(householdMemberId: string): Promise<MealPlan | undefined> {
-    const result = await db
-      .select()
-      .from(mealPlans)
-      .where(
-        and(
-          eq(mealPlans.householdMemberId, householdMemberId),
-          eq(mealPlans.isActive, true)
+    try {
+      const result = await db
+        .select()
+        .from(mealPlans)
+        .where(
+          and(
+            eq(mealPlans.householdMemberId, householdMemberId),
+            eq(mealPlans.isActive, true)
+          )
         )
-      )
-      .limit(1);
-    return result[0];
+        .limit(1);
+      return result[0];
+    } catch (error) {
+      console.error("Error fetching active meal plan:", error);
+      return undefined;
+    }
   }
 
   async getMemberMealPlans(householdMemberId: string): Promise<MealPlan[]> {
-    return await db
-      .select()
-      .from(mealPlans)
-      .where(eq(mealPlans.householdMemberId, householdMemberId))
-      .orderBy(desc(mealPlans.createdAt));
+    try {
+      return await db
+        .select()
+        .from(mealPlans)
+        .where(eq(mealPlans.householdMemberId, householdMemberId))
+        .orderBy(desc(mealPlans.createdAt));
+    } catch (error) {
+      console.error("Error fetching member meal plans:", error);
+      return [];
+    }
   }
 
   async createMealPlan(mealPlan: InsertMealPlan): Promise<MealPlan> {
@@ -401,25 +411,37 @@ export class DbStorage implements IStorage {
     startDate: Date,
     endDate: Date
   ): Promise<any> {
-    const plans = await db
-      .select()
-      .from(mealPlans)
-      .where(
-        and(
-          eq(mealPlans.householdMemberId, householdMemberId),
-          sql`${mealPlans.weekStartDate} >= ${startDate}`,
-          sql`${mealPlans.weekStartDate} <= ${endDate}`
-        )
-      );
+    try {
+      const plans = await db
+        .select()
+        .from(mealPlans)
+        .where(
+          and(
+            eq(mealPlans.householdMemberId, householdMemberId),
+            sql`${mealPlans.weekStartDate} >= ${startDate}`,
+            sql`${mealPlans.weekStartDate} <= ${endDate}`
+          )
+        );
 
-    return {
-      householdMemberId,
-      startDate,
-      endDate,
-      mealPlans: plans,
-      totalCalories: plans.reduce((sum, plan) => sum + (plan.totalCalories || 0), 0),
-      totalCost: plans.reduce((sum, plan) => sum + Number(plan.totalCost || 0), 0),
-    };
+      return {
+        householdMemberId,
+        startDate,
+        endDate,
+        mealPlans: plans || [],
+        totalCalories: plans ? plans.reduce((sum, plan) => sum + (plan.totalCalories || 0), 0) : 0,
+        totalCost: plans ? plans.reduce((sum, plan) => sum + Number(plan.totalCost || 0), 0) : 0,
+      };
+    } catch (error) {
+      console.error("Error fetching nutrition report:", error);
+      return {
+        householdMemberId,
+        startDate,
+        endDate,
+        mealPlans: [],
+        totalCalories: 0,
+        totalCost: 0,
+      };
+    }
   }
 
   // Admin methods
