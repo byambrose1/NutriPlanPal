@@ -41,6 +41,48 @@ const isAdmin = async (req: any, res: any, next: any) => {
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
+  // Guest Login endpoint
+  app.post("/api/auth/guest-login", async (req, res) => {
+    try {
+      // Create a unique guest user ID
+      const guestId = `guest-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      
+      // Create guest user in database
+      await storage.upsertUser({
+        id: guestId,
+        email: `${guestId}@guest.nutriplan.app`,
+        firstName: "Guest",
+        lastName: "User",
+        profileImageUrl: null,
+      });
+
+      // Create a guest session manually
+      (req as any).session.passport = {
+        user: {
+          claims: {
+            sub: guestId,
+            email: `${guestId}@guest.nutriplan.app`,
+            first_name: "Guest",
+            last_name: "User",
+          },
+          expires_at: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // 24 hours from now
+        }
+      };
+      
+      await new Promise((resolve, reject) => {
+        (req as any).session.save((err: any) => {
+          if (err) reject(err);
+          else resolve(undefined);
+        });
+      });
+
+      res.json({ success: true, userId: guestId });
+    } catch (error: any) {
+      console.error("Guest login error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Mount Stripe webhook specifically (needs raw body for signature verification)
   // This must be mounted separately before JSON middleware
   app.use("/api/stripe/webhook", express.raw({ type: 'application/json' }));

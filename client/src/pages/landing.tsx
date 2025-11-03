@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   ChefHat, 
   Sparkles, 
@@ -18,15 +20,27 @@ import {
   Star,
   CheckCircle,
   Play,
-  Globe
+  Globe,
+  UserCheck
 } from "lucide-react";
 
 type Language = 'en-GB' | 'en-US';
 
 const Landing = () => {
+  const [, setLocation] = useLocation();
   const [language, setLanguage] = useState<Language>('en-GB');
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
+  // Guest login mutation
+  const guestLoginMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("/api/auth/guest-login", "POST", {});
+    },
+    onSuccess: () => {
+      setLocation("/onboarding");
+    }
+  });
 
   // Rotating banner options
   const bannerOptions = {
@@ -481,6 +495,18 @@ const Landing = () => {
                 {currentContent.hero.ctaPrimary}
               </Button>
             </a>
+            
+            <Button 
+              onClick={() => guestLoginMutation.mutate()}
+              disabled={guestLoginMutation.isPending}
+              size="lg"
+              variant="outline"
+              className="px-8 py-6 text-lg rounded-full border-2 border-green-400 text-green-600 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-950"
+              data-testid="cta-guest"
+            >
+              <UserCheck className="w-5 h-5 mr-2" />
+              {guestLoginMutation.isPending ? "Loading..." : "Try as Guest"}
+            </Button>
             
             <Button 
               variant="outline" 
