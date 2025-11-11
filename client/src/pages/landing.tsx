@@ -35,10 +35,15 @@ const Landing = () => {
   // Guest login mutation
   const guestLoginMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("/api/auth/guest-login", "POST", {});
+      return await apiRequest("POST", "/api/auth/guest-login", {});
     },
     onSuccess: () => {
-      setLocation("/onboarding");
+      // Force page reload to refresh auth state
+      window.location.href = "/onboarding";
+    },
+    onError: (error: any) => {
+      console.error("Guest login failed:", error);
+      alert("Failed to start guest session: " + (error.message || "Unknown error"));
     }
   });
 
