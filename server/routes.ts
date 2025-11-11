@@ -50,33 +50,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create guest user in database
       await storage.upsertUser({
         id: guestId,
+        username: guestId,
         email: `${guestId}@guest.nutriplan.app`,
+        name: "Guest User",
         firstName: "Guest",
         lastName: "User",
         profileImageUrl: null,
       });
 
-      // Create a guest session manually
-      (req as any).session.passport = {
-        user: {
-          claims: {
-            sub: guestId,
-            email: `${guestId}@guest.nutriplan.app`,
-            first_name: "Guest",
-            last_name: "User",
-          },
-          expires_at: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // 24 hours from now
-        }
+      // Create user object for passport session
+      const guestUser = {
+        claims: {
+          sub: guestId,
+          email: `${guestId}@guest.nutriplan.app`,
+          first_name: "Guest",
+          last_name: "User",
+        },
+        expires_at: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // 24 hours from now
       };
-      
-      await new Promise((resolve, reject) => {
-        (req as any).session.save((err: any) => {
-          if (err) reject(err);
-          else resolve(undefined);
-        });
-      });
 
-      res.json({ success: true, userId: guestId });
+      // Use passport's login method to properly set up the session
+      req.login(guestUser, (err) => {
+        if (err) {
+          console.error("Guest login error:", err);
+          return res.status(500).json({ message: "Failed to create guest session" });
+        }
+        res.json({ success: true, userId: guestId });
+      });
     } catch (error: any) {
       console.error("Guest login error:", error);
       res.status(500).json({ message: error.message });
