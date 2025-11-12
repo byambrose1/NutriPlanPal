@@ -18,6 +18,7 @@ import {
 import { generateRecipe, generateWeeklyMealPlan } from "./services/openai";
 import { z } from "zod";
 import express from "express";
+import { fatSecretAPI } from "./fatsecret";
 
 // Admin middleware - check if user has admin privileges
 const isAdmin = async (req: any, res: any, next: any) => {
@@ -89,6 +90,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount remaining Stripe routes
   app.use("/api/stripe", stripeRouter);
+
+  // FatSecret Food Search API endpoints
+  app.get("/api/foods/search", isAuthenticated, async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      const maxResults = parseInt(req.query.max_results as string) || 20;
+
+      if (!query || query.trim().length === 0) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+
+      const foods = await fatSecretAPI.searchFoods(query, maxResults);
+      res.json(foods);
+    } catch (error: any) {
+      console.error("Food search error:", error);
+      res.status(500).json({ message: error.message || "Failed to search foods" });
+    }
+  });
+
+  app.get("/api/foods/:foodId", isAuthenticated, async (req, res) => {
+    try {
+      const { foodId } = req.params;
+      
+      if (!foodId) {
+        return res.status(400).json({ message: "Food ID is required" });
+      }
+
+      const foodDetails = await fatSecretAPI.getFoodDetails(foodId);
+      
+      if (!foodDetails) {
+        return res.status(404).json({ message: "Food not found" });
+      }
+
+      res.json(foodDetails);
+    } catch (error: any) {
+      console.error("Food details error:", error);
+      res.status(500).json({ message: error.message || "Failed to get food details" });
+    }
+  });
 
   // Authentication endpoints
   app.get("/api/auth/user", isAuthenticated, async (req, res) => {
