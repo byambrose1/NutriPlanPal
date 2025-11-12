@@ -1,0 +1,282 @@
+I need to:
+
+Fix all core UX/data bugs,
+
+Replace Replit Auth with Supabase Auth,
+
+Split out the admin panel into its own UI and API,
+
+Add invite-based onboarding so members can join a household from their own device,
+
+Add age-specific portion control and goal-based meal scaling,
+
+Add pricing tiers (Solo, Duo, Family) with Stripe upgrades,
+
+Add a maintenance flag,
+
+Add accountability + light community features,
+
+Add a simple forum,
+
+Implement proper Pantry and Nutrition tracking (these currently do not exist).
+
+Remove any guest/demo login logic entirely.
+
+🔧 Objectives (Phase 1 – implement now)
+
+Supabase Auth
+
+Remove Replit Auth completely.
+
+Add Supabase email+password (and optional magic link).
+
+Support password reset and sign-out.
+
+Onboarding → Dashboard
+
+Fix auto-submit bug.
+
+Persist all household + personal data correctly.
+
+Dashboard greets with correct name and reflects questionnaire responses.
+
+Add Member (in-app)
+
+Only show the personal questions (reuse existing personal section).
+
+Do not route back to the onboarding wizard.
+
+Save via POST /households/:householdId/members.
+
+Refresh dashboard with new member and mark current plan “stale”.
+
+Invite Flow (multi-device)
+
+Generate an invite link: POST /households/:id/invite.
+
+New member opens /onboarding?invite=CODE.
+
+Skip household questions, show personal questions only.
+
+On submit → member joins household.
+
+Pricing tiers (Stripe)
+
+households.subscription_tier = 'solo'|'duo'|'family'.
+
+Enforce caps: solo=1 member, duo=2, family=5.
+
+Show upgrade modal + Stripe Checkout when cap exceeded.
+
+Update tier on successful webhook.
+
+Meal Plans & Shopping Lists
+
+Implement working POST /meal-plans/generate and POST /grocery-list/from-plan.
+
+Plans must include per-member memberServings.
+
+Grocery list scales ingredients by sum of multipliers.
+
+Handle plan regeneration when members change.
+
+Age-specific portion control + individual goals
+
+Each member stores age_band, goal, optional weight_kg.
+
+Compute multiplier + protein floor per age/goal:
+
+Age band	Multiplier	Protein floor (g/kg/day)	Plate (P/C/V %)
+3–5 y	0.5×	0.9	25/40/35
+6–12 y	0.7×	1.0	25/40/35
+13–17 y	0.9×	1.1	28/37/35
+Adult Maintain	1.0×	1.2	30/35/35
+Adult Fat-loss	0.8×	1.2–1.3	35/25/40
+Adult Gain/Active	1.2×	1.4	30/45/25
+60+ Maintain	0.9–1.0×	1.2–1.5	35/30/35
+
+Fat-loss adults: reduce carbs, increase veg, keep protein high.
+
+Children: never apply adult fat-loss carb cuts; show copy “Kids need balance, not strict diets.”
+
+Plan JSON must output memberServings map per meal and mark protein_shortfall if below floor.
+
+Add GET /recipes/:id/plate?memberId=... returning grams & hand cues for that member.
+
+UI: meal chips (Name • multiplier), tap → plate card with grams, hand cues, friendly copy.
+
+Admin Split
+
+Create nutriplan-admin-api/ with JWT + TOTP login, RBAC (support_readonly, admin, super_admin), and audit logs.
+
+Create nutriplan-admin-ui/ for managing feature flags, recipes CRUD, audit viewer.
+
+Admin actions write to admin_audit_logs.
+
+Maintenance flag
+
+If feature_flags.maintenance_mode.enabled=true, public app returns HTTP 503 with friendly page.
+
+Accountability + Household feed (beta-light)
+
+Daily streaks table (streaks).
+
+Weekly check-in form (mood, adherence %, note).
+
+household_feed logs plan generations, check-ins, milestones.
+
+Render “Your week at a glance” card + last 5 feed events on dashboard.
+
+Community Forum MVP
+
+Tables: forum_categories, forum_threads, forum_posts, forum_reactions, forum_reports.
+
+Public to logged-in users; posting gated by tier:
+
+Solo → read-only (or 7-day trial if feature_flags.community_trial=true).
+
+Duo/Family → full read/write.
+
+Endpoints:
+
+GET  /community/categories
+GET  /community/threads?category=slug&page=1
+POST /community/threads
+GET  /community/threads/:id
+GET  /community/threads/:id/posts?page=1
+POST /community/threads/:id/posts
+POST /community/posts/:id/react
+POST /community/posts/:id/report
+
+
+Rate-limit writes (30 / 10 min per user).
+
+Admin moderation endpoints: hide, lock, pin, review reports.
+
+Front-end: categories → threads → posts; basic markdown (*bold*, _italic_).
+
+Pantry & Nutrition Tracking (implement new)
+
+Add pantry table: user items (name, qty, unit, expiry, category).
+
+Add nutrition log: date, meal_type, recipe_id/food_id, calories, macros.
+
+Connect to FatSecret API for food lookups.
+
+Allow quick add from pantry or database.
+
+Dashboard “Today’s Nutrition” summary card.
+
+Remove guest/demo flow
+
+Delete any guest or auto-login logic used for testing.
+
+Require Supabase authentication for all routes except static pages.
+
+🗂️ Database (Supabase Postgres)
+
+Include all required tables:
+
+feature_flags, admin_users, admin_audit_logs
+
+households, household_members, household_invites
+
+recipes, meal_plans, grocery_lists
+
+streaks, check_ins, household_feed
+
+forum_categories, forum_threads, forum_posts, forum_reactions, forum_reports
+
+pantry_items, nutrition_logs (new)
+
+Seed data:
+
+10–20 realistic recipes with correct macros.
+
+Forum categories: quick-wins, family-swaps, 10-minute-meals, plant-protein, ask-the-community.
+
+3 pinned starter threads.
+
+🧩 Public-App UX
+
+Dashboard cards:
+
+Greeting (with correct name).
+
+Family card (members + Add Member + Invite via Link).
+
+Active plan (create/regenerate if stale).
+
+Grocery list card.
+
+Accountability card (week summary + streak).
+
+Mini household feed.
+
+Community preview (3 recent threads).
+
+Add Member modal: personal questions only; saves & refreshes without reload.
+
+Invite onboarding: personal form only; link household automatically.
+
+Meal cards: show member chips; tap → plate guide with grams & hand cues.
+
+Forum: Community tab with categories → threads → posts.
+
+🧮 Core Functional Rules
+
+Always compute portion multipliers and protein floors using age + goal.
+
+Never suggest strict diets for minors; use educational copy.
+
+Scale recipes & shopping list by SUM(memberServings).
+
+Use Stripe to enforce tier limits.
+
+Keep Supabase as single DB; all Repls share same connection.
+
+All sensitive keys in .env, never hard-coded.
+
+✅ Acceptance Checklist
+
+No auto-submit bug; onboarding saves and routes cleanly.
+
+Dashboard shows correct data and household.
+
+Add Member works; Invite onboarding works.
+
+Meal plans generate with per-member servings and correct scaling.
+
+Shopping list accurate.
+
+Plate cards show per-member guidance with age/goal text.
+
+Supabase Auth fully replaces Replit Auth.
+
+Admin split functional (login + audit + flags).
+
+Stripe upgrades work; member limits enforced.
+
+Maintenance flag works (503 page).
+
+Accountability, streaks, feed, and forum all functional.
+
+Pantry & nutrition tracking implemented.
+
+Guest/demo flow removed.
+
+No hard-coded secrets.
+
+🧭 Deliverables
+
+Updated code across the three Repls (app, admin-api, admin-ui).
+
+All migrations and seed scripts.
+
+.env.example and README.md in each folder.
+
+TEST_PLAN.md describing manual checks for every acceptance point.
+
+British English copy throughout.
+
+If anything is unclear, choose the least-disruptive solution that keeps Supabase Auth working, enforces tier rules, and delivers the acceptance checklist above.
