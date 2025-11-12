@@ -1,0 +1,253 @@
+Prepare a beta with three Repls and a shared Postgres DB. Remove admin from the public app. Add a minimal admin (secure) and the core nutrition features.
+
+1) Create/confirm Repls
+
+nutriplan-app (public app + public API) — no admin code.
+
+nutriplan-admin-api (admin-only backend).
+
+nutriplan-admin-ui (admin front-end).
+
+2) Use a shared Postgres DB (Supabase or Neon)
+
+Create/Postgres project. Produce two DB users/URLs:
+
+app_user (limited permissions) for nutriplan-app.
+
+admin_api (wider permissions) for nutriplan-admin-api.
+
+Add idempotent SQL migrations to create these tables if missing:
+
+-- Ops / flags
+create table if not exists feature_flags (
+  key text primary key,
+  value jsonb not null default '{}'::jsonb,
+  updated_by uuid,
+  updated_at timestamptz default now()
+);
+
+create table if not exists admin_users (
+  id uuid primary key default gen_random_uuid(),
+  email text unique not null,
+  pass_hash text not null,
+  roles text[] not null default array['admin'],
+  totp_secret text,
+  is_active boolean not null default true,
+  last_login_at timestamptz
+);
+
+create table if not exists admin_audit_logs (
+  id bigserial primary key,
+  actor_id uuid,
+  action text,
+  entity text,
+  entity_id text,
+  before jsonb,
+  after jsonb,
+  ip text,
+  ua text,
+  at timestamptz default now()
+);
+
+-- Core nutrition
+create table if not exists households (
+  id uuid primary key default gen_random_uuid(),
+  owner_user_id uuid,
+  name text,
+  created_at timestamptz default now()
+);
+
+create table if not exists household_members (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid references households(id) on delete cascade,
+  display_name text,
+  is_child boolean default false,
+  is_vegetarian boolean default false,
+  dietary_tags text[] default '{}',
+  goals jsonb default '{}'::jsonb
+);
+
+create table if not exists recipes (
+  id uuid primary key default gen_random_uuid(),
+  title text,
+  is_family_friendly boolean default true,
+  tags text[] default '{}',
+  diet text,
+  prep_minutes int,
+  cook_minutes int,
+  calories_per_serving int,
+  protein_g int,
+  carbs_g int,
+  fat_g int,
+  ingredients jsonb,
+  steps jsonb,
+  created_by uuid,
+  created_at timestamptz default now()
+);
+
+create table if not exists meal_plans (
+  id uuid primary key default gen_random_uuid(),
+  owner_user_id uuid,
+  household_id uuid,
+  start_date date,
+  days int,
+  personas text[] default '{}',
+  plan jsonb,
+  created_at timestamptz default now()
+);
+
+create table if not exists grocery_lists (
+  id uuid primary key default gen_random_uuid(),
+  owner_user_id uuid,
+  household_id uuid,
+  for_plan_id uuid,
+  items jsonb,
+  created_at timestamptz default now()
+);
+
+
+(Also set DB grants: app_user = read most tables, write only via app; admin_api = read/write where needed + admin tables.)
+
+3) Set env vars in each Repl (fail fast if missing)
+
+nutriplan-app
+
+DATABASE_URL
+
+FEATURE_FLAGS_TABLE=feature_flags
+
+APP_JWT_SECRET
+
+nutriplan-admin-api
+
+DATABASE_URL
+
+ADMIN_JWT_SECRET
+
+ADMIN_UI_ORIGIN
+
+TOTP_ISSUER=NutriPlanPal
+
+IP_ALLOWLIST (optional)
+
+nutriplan-admin-ui
+
+VITE_ADMIN_API_URL
+
+4) Public app tasks (nutriplan-app)
+
+Remove all admin routes.
+
+Add middleware: if feature_flags.maintenance_mode.enabled = true, return HTTP 503 with a friendly page.
+
+Add endpoints:
+
+POST /onboarding → save persona(s), diet, time budget, household size/preferences.
+
+POST /meal-plans/generate → create a 7-day plan using simple rules (no AI needed).
+
+POST /grocery-list/from-plan → build a merged grocery list from a plan.
+
+GET /recipes?filters=… → filter by vegetarian, prep time, family-friendly, protein target.
+
+Keep user auth simple (email+password or magic link) with APP_JWT_SECRET.
+
+5) Admin API tasks (nutriplan-admin-api)
+
+Add CORS restricted to ADMIN_UI_ORIGIN.
+
+Add rate limiting (e.g., 120 req/min).
+
+Optional IP allowlist (deny if request IP not in list when set).
+
+Auth:
+
+POST /auth/login → email+password, then require TOTP, then issue a short-lived JWT (5–15 mins) + refresh.
+
+JWT uses ADMIN_JWT_SECRET and includes roles.
+
+RBAC helper requireRole('support_readonly'|'admin'|'super_admin').
+
+Audit middleware: for every write, insert a row into admin_audit_logs (actor, action, entity, entity_id, before/after, ip, ua).
+
+Routes:
+
+GET /healthz
+
+GET /flags
+
+POST /flags/:key (super_admin)
+
+POST /maintenance/toggle (super_admin)
+
+GET /users/search?q= (support_readonly)
+
+GET/POST /recipes (admin)
+
+GET /audit?limit=… (super_admin)
+
+Bootstrap: add a one-time script/endpoint to insert a super_admin with a bcrypt hash and to set up their TOTP (QR shown once).
+
+6) Admin UI tasks (nutriplan-admin-ui)
+
+Pages:
+
+Login (email, password, TOTP).
+
+Feature Flags (toggle maintenance_mode).
+
+Recipes Manager (CRUD with confirm dialogs; soft delete is fine).
+
+Audit Log (paginated table).
+
+Store token safely (in memory or httpOnly cookie). Auto-logout on expiry.
+
+7) Personas & rules (public app)
+
+Onboarding should support at least:
+
+time-poor professional
+
+family meal juggler (household with mixed goals)
+
+plant-based eater
+
+fitness-focused adult
+
+midlife reset
+
+Simple rules engine for beta:
+
+Persona → defaults for prep time, protein target, calories per adult/child, veg toggle, family-friendly filter.
+
+For mixed goals: generate a base family meal + an adult variant (portion/side swap); scale grocery quantities accordingly.
+
+8) Basic tests to prove it works
+
+When maintenance_mode flag is true → public app returns 503.
+
+Admin login enforces TOTP and role checks.
+
+Every admin write inserts an admin_audit_logs row.
+
+Onboarding → meal-plans/generate respects persona/time/diet/household.
+
+Grocery list merges duplicate items and scales quantities by household size.
+
+9) Add these integrations now
+
+Sentry (public app + admin API).
+
+PostHog (events: onboarding_completed, plan_generated, grocery_list_created).
+
+UptimeRobot monitors /healthz for both public and admin API.
+
+Deliverables:
+
+Updated code for all three Repls meeting the above.
+
+SQL migrations and a short README.md in each Repl explaining env vars, how to run, and a seed script that creates one super_admin + a few recipes.
+
+Keep copy in British English.
+
+Keep code minimal and production-sane. No secrets hardcoded.
