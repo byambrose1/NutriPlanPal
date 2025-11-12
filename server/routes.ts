@@ -19,6 +19,7 @@ import { generateRecipe, generateWeeklyMealPlan } from "./services/openai";
 import { z } from "zod";
 import express from "express";
 import { fatSecretAPI } from "./fatsecret";
+import { searchFoods as searchLocalFoods, getFoodById } from "./foodDatabase";
 
 // Admin middleware - check if user has admin privileges
 const isAdmin = async (req: any, res: any, next: any) => {
@@ -91,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount remaining Stripe routes
   app.use("/api/stripe", stripeRouter);
 
-  // FatSecret Food Search API endpoints
+  // Food Search API endpoints (tries FatSecret, falls back to local database)
   app.get("/api/foods/search", isAuthenticated, async (req, res) => {
     try {
       const query = req.query.q as string;
@@ -101,8 +102,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Search query is required" });
       }
 
-      const foods = await fatSecretAPI.searchFoods(query, maxResults);
-      res.json(foods);
+      // Try FatSecret API first
+      try {
+        const foods = await fatSecretAPI.searchFoods(query, maxResults);
+        if (foods && foods.length > 0) {
+          return res.json({ source: "fatsecret", foods });
+        }
+      } catch (error) {
+        console.log("FatSecret unavailable, using local database");
+      }
+
+      // Fallback to local database
+      const localFoods = searchLocalFoods(query, maxResults);
+      res.json({ source: "local", foods: localFoods });
     } catch (error: any) {
       console.error("Food search error:", error);
       res.status(500).json({ message: error.message || "Failed to search foods" });
@@ -117,13 +129,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Food ID is required" });
       }
 
-      const foodDetails = await fatSecretAPI.getFoodDetails(foodId);
-      
-      if (!foodDetails) {
+      // Try FatSecret first
+      try {
+        const foodDetails = await fatSecretAPI.getFoodDetails(foodId);
+        if (foodDetails) {
+          return res.json({ source: "fatsecret", food: foodDetails });
+        }
+      } catch (error) {
+        console.log("FatSecret unavailable, checking local database");
+      }
+
+      // Fallback to local database
+      const localFood = getFoodById(foodId);
+      if (!localFood) {
         return res.status(404).json({ message: "Food not found" });
       }
 
-      res.json(foodDetails);
+      res.json({ source: "local", food: localFood });
     } catch (error: any) {
       console.error("Food details error:", error);
       res.status(500).json({ message: error.message || "Failed to get food details" });

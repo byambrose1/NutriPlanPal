@@ -91,7 +91,7 @@ class FatSecretAPI {
         expires_at: Date.now() + (response.data.expires_in * 1000) - 60000
       };
 
-      return this.tokenCache.access_token;
+      return this.tokenCache?.access_token || '';
     } catch (error: any) {
       console.error('FatSecret OAuth error:', error.response?.data || error.message);
       throw new Error('Failed to authenticate with FatSecret API');
