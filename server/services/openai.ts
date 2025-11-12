@@ -1,6 +1,5 @@
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 function getOpenAIClient(): OpenAI {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY environment variable is required. Please add your OpenAI API key to use recipe and meal plan generation features.");
@@ -169,7 +168,7 @@ Return the recipe as a JSON object with the following structure:
   try {
     const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -242,7 +241,7 @@ Return as JSON with this structure:
   try {
     const openai = getOpenAIClient();
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",

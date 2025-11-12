@@ -437,12 +437,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const preferences = await storage.getHouseholdPreferences(member.householdId);
+      const members = await storage.getHouseholdMembers(member.householdId);
+      const childMembers = members.filter((m: any) => m.isChild && m.age);
       
-      const mealPlanData = await generateWeeklyMealPlan({
-        member,
-        household,
-        preferences: preferences || undefined
-      });
+      const mealPlanParams = {
+        familySize: members.length || 2,
+        weeklyBudget: parseFloat(household.weeklyBudget as any) || 100,
+        dietaryRestrictions: member.dietaryRestrictions || [],
+        allergies: member.allergies || [],
+        cookingSkillLevel: preferences?.cookingSkillLevel || 'intermediate',
+        goals: [member.primaryGoal || 'general_health'],
+        preferredCuisines: member.preferredCuisines || [],
+        dislikedIngredients: member.dislikedFoods || [],
+        equipment: preferences?.kitchenEquipment || ['stove', 'oven', 'microwave'],
+        childrenAges: childMembers.map((m: any) => m.age).filter(Boolean),
+        mealPrepPreference: preferences?.mealPrepPreference || 'balanced',
+        currency: household.currency || 'GBP',
+        medicalConditions: member.medicalConditions || [],
+        primaryGoal: member.primaryGoal || undefined,
+        currentWeight: member.currentWeight ? parseFloat(member.currentWeight as any) : undefined,
+        weightUnit: member.weightUnit || undefined,
+        height: member.height ? parseFloat(member.height as any) : undefined,
+        heightUnit: member.heightUnit || undefined,
+        activityLevel: member.activityLevel || undefined,
+        age: member.age || undefined,
+        gender: member.gender || undefined
+      };
+      
+      const mealPlanData = await generateWeeklyMealPlan(mealPlanParams);
 
       if (!mealPlanData) {
         return res.status(500).json({ message: "Failed to generate meal plan" });
@@ -451,9 +473,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mealPlan = await storage.createMealPlan({
         householdMemberId: req.params.memberId,
         weekStartDate: new Date(),
-        meals: mealPlanData.meals,
-        totalCost: mealPlanData.totalCost,
-        totalCalories: mealPlanData.totalCalories
+        meals: mealPlanData as any,
+        totalCost: (mealPlanData.totalWeeklyCost || 0).toString(),
+        totalCalories: mealPlanData.totalWeeklyCalories || 0
       });
 
       res.json(mealPlan);
