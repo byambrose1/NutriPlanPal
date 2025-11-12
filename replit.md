@@ -38,6 +38,10 @@ Preferred communication style: Simple, everyday language.
 ### External Service Integrations
 - **AI Services**: OpenAI API for recipe generation and meal plan creation
 - **Payment Processing**: Stripe integration for subscription management with hosted Checkout and Customer Portal
+- **Food Database**: FatSecret Platform API integration with comprehensive local fallback database
+  - Real-time food search with accurate nutrition data
+  - Automatic fallback to local database with 50+ common foods
+  - Seamless switching between FatSecret and local data
 - **Grocery Data**: Mock grocery price comparison service (prepared for real store API integration)
 - **Email Services**: Prepared for notification and communication features
 
@@ -146,6 +150,32 @@ Preferred communication style: Simple, everyday language.
 - **date-fns**: Date manipulation library
 - **wouter**: Lightweight routing library
 - **nanoid**: Unique ID generation
+
+## FatSecret Food Database Integration
+
+### Status: ✅ ACTIVE
+
+The FatSecret Platform API provides access to a comprehensive food database with detailed nutrition information.
+
+**Current Setup:**
+- API credentials configured in Replit Secrets
+- OAuth 2.0 authentication implemented
+- Automatic token management and refresh
+- Comprehensive local fallback database (50+ foods) for offline/backup use
+
+**Environment Variables:**
+- `FATSECRET_CLIENT_ID` - Your FatSecret Client ID (configured)
+- `FATSECRET_CLIENT_SECRET` - Your FatSecret Client Secret (configured)
+
+**Features:**
+- Search thousands of foods with real nutrition data
+- Brand-name and generic food items
+- Detailed serving sizes and nutrition breakdowns
+- Automatic fallback to local database if API unavailable
+- Seamless integration - users never know which data source is being used
+
+**Usage in App:**
+The FoodSearch component (`client/src/components/FoodSearch.tsx`) provides a user-friendly interface for searching foods anywhere in the app.
 
 ## Subscription Integration Setup
 
