@@ -59,6 +59,8 @@ class FatSecretAPI {
 
     if (!this.clientId || !this.clientSecret) {
       console.warn('FatSecret API credentials not configured. Food search will use fallback data.');
+    } else {
+      console.log('FatSecret API initialized successfully');
     }
   }
 
@@ -102,7 +104,9 @@ class FatSecretAPI {
     }
 
     try {
+      console.log(`FatSecret: Searching for "${query}"...`);
       const token = await this.getAccessToken();
+      console.log('FatSecret: Access token obtained');
 
       const response = await axios.post(
         this.apiUrl,
@@ -120,16 +124,21 @@ class FatSecretAPI {
         }
       );
 
+      console.log('FatSecret API response:', JSON.stringify(response.data).substring(0, 200));
+
       if (response.data.foods && response.data.foods.food) {
         const foods = Array.isArray(response.data.foods.food) 
           ? response.data.foods.food 
           : [response.data.foods.food];
+        console.log(`FatSecret: Found ${foods.length} foods`);
         return foods;
       }
 
+      console.log('FatSecret: No foods found');
       return [];
     } catch (error: any) {
       console.error('FatSecret search error:', error.response?.data || error.message);
+      console.error('Error details:', error);
       throw new Error('Failed to search foods');
     }
   }
