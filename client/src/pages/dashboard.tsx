@@ -56,7 +56,9 @@ export default function Dashboard() {
 
   // Fetch recipes (personalized based on current member's preferences)
   const { data: recipes = [] } = useQuery<any[]>({
-    queryKey: ["/api/recipes", { memberId: currentMember?.id }],
+    queryKey: currentMember?.id 
+      ? [`/api/recipes?memberId=${currentMember.id}&limit=6`]
+      : ["/api/recipes?limit=6"],
     enabled: !!currentMember?.id,
   });
 
