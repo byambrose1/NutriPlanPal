@@ -54,9 +54,10 @@ export default function Dashboard() {
     enabled: !!household?.id,
   });
 
-  // Fetch recipes
+  // Fetch recipes (personalized based on current member's preferences)
   const { data: recipes = [] } = useQuery<any[]>({
-    queryKey: ["/api/recipes"],
+    queryKey: ["/api/recipes", { memberId: currentMember?.id }],
+    enabled: !!currentMember?.id,
   });
 
   // Generate meal plan mutation

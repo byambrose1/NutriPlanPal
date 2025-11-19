@@ -216,14 +216,17 @@ ${params.currency ? `Currency: ${params.currency}` : ''}
 
 Create a balanced weekly meal plan that:
 - Stays within budget
-- Incorporates batch cooking opportunities if preferred
-- Includes variety across the week
+- MAXIMISE INGREDIENT REUSE: Plan meals to use the same fresh ingredients across 2-3 days (e.g., if you buy a whole aubergine on Monday, use it in meals Monday-Wednesday)
+- Use whole vegetables and standard package sizes (e.g., "1 courgette" not "100g courgette", "1 can chickpeas" not "200g chickpeas")
+- Incorporates batch cooking opportunities if preferred - cook extra portions for leftovers
+- Includes variety across the week while reusing core ingredients
 - Is nutritionally balanced
 - Considers prep time for busy families
-- Makes use of leftovers efficiently
+- Makes use of leftovers efficiently and plans them intentionally
 - Is kid-friendly if children are present
 - Takes into account medical conditions and adjusts nutrition accordingly
 - Aligns with user's primary health goal and activity level
+- Suggests practical shopping quantities (whole items, standard tins/packages)
 
 For each day, provide breakfast, lunch, and dinner. Include detailed recipes with ingredients, instructions, nutrition info, and cost estimates. Also provide weekly shopping tips and batch cooking suggestions.
 
@@ -279,12 +282,19 @@ IMPORTANT: Ingredients MUST be objects with "name", "amount", and "unit" fields 
 
   try {
     const openai = getOpenAIClient();
+    
+    // Determine if UK localization is needed
+    const isUK = params.currency === 'GBP';
+    const systemPrompt = isUK 
+      ? "You are an expert British meal planning nutritionist who specializes in creating budget-friendly, family-oriented weekly meal plans using BRITISH ENGLISH ONLY. CRITICAL: Use only British terminology: courgette (NOT zucchini), aubergine (NOT eggplant), coriander (NOT cilantro), rocket (NOT arugula), spring onion (NOT scallion), minced beef (NOT ground beef), prawns (NOT shrimp). Use metric measurements. Focus on nutrition, variety, cost-effectiveness, and practical meal preparation. Maximise ingredient reuse across the week to reduce waste and cost. Plan meals so fresh produce is used within 2-3 days. Consider all health metrics including medical conditions, fitness goals, activity levels, and individual characteristics when creating plans."
+      : "You are an expert meal planning nutritionist who specializes in creating budget-friendly, family-oriented weekly meal plans. Focus on nutrition, variety, cost-effectiveness, and practical meal preparation. Maximize ingredient reuse across the week to reduce waste and cost. Plan meals so fresh produce is used within 2-3 days. Consider all health metrics including medical conditions, fitness goals, activity levels, and individual characteristics when creating plans.";
+    
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: "You are an expert meal planning nutritionist who specializes in creating budget-friendly, family-oriented weekly meal plans. Focus on nutrition, variety, cost-effectiveness, and practical meal preparation. Consider all health metrics including medical conditions, fitness goals, activity levels, and individual characteristics when creating plans."
+          content: systemPrompt
         },
         {
           role: "user",

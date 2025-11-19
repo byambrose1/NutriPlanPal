@@ -353,12 +353,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
       const search = req.query.search as string;
+      const memberId = req.query.memberId as string;
 
       let recipes;
       if (search) {
         recipes = await storage.searchRecipes(search);
       } else {
         recipes = await storage.getRecipes(limit, offset);
+      }
+
+      // If memberId provided, filter and score recipes based on preferences
+      if (memberId && recipes.length > 0) {
+        try {
+          const member = await storage.getHouseholdMember(memberId);
+          if (member) {
+            // Score each recipe based on member preferences
+            const scoredRecipes = recipes.map((recipe: any) => {
+              let score = 0;
+              
+              // Negative scoring for disliked foods and allergies
+              const dislikedFoods = member.dislikedFoods || [];
+              const allergies = member.allergies || [];
+              const dietaryRestrictions = member.dietaryRestrictions || [];
+              const preferredCuisines = member.preferredCuisines || [];
+              
+              // Check if recipe contains disliked ingredients or allergens
+              const recipeIngredientsText = JSON.stringify(recipe.ingredients || []).toLowerCase();
+              const recipeDescription = (recipe.description || '').toLowerCase();
+              const recipeTags = recipe.dietaryTags || [];
+              
+              // Disqualify if contains allergens
+              for (const allergen of allergies) {
+                if (recipeIngredientsText.includes(allergen.toLowerCase()) || 
+                    recipeDescription.includes(allergen.toLowerCase())) {
+                  score -= 1000; // Basically exclude
+                }
+              }
+              
+              // Reduce score for disliked foods
+              for (const disliked of dislikedFoods) {
+                if (recipeIngredientsText.includes(disliked.toLowerCase()) ||
+                    recipeDescription.includes(disliked.toLowerCase())) {
+                  score -= 50;
+                }
+              }
+              
+              // Boost score for matching dietary restrictions
+              for (const restriction of dietaryRestrictions) {
+                if (recipeTags.some((tag: string) => tag.toLowerCase().includes(restriction.toLowerCase()))) {
+                  score += 30;
+                }
+              }
+              
+              // Boost score for preferred cuisines
+              if (preferredCuisines.length > 0 && recipe.cuisineType) {
+                for (const cuisine of preferredCuisines) {
+                  if (recipe.cuisineType.toLowerCase().includes(cuisine.toLowerCase())) {
+                    score += 20;
+                  }
+                }
+              }
+              
+              // Boost kid-friendly recipes if household has children
+              if (member.isChild && recipe.isKidFriendly) {
+                score += 15;
+              }
+              
+              // Slightly boost higher-rated recipes
+              if (recipe.rating) {
+                score += parseFloat(recipe.rating as any) || 0;
+              }
+              
+              return { ...recipe, preferenceScore: score };
+            });
+            
+            // Sort by score and filter out negative scores (allergens)
+            recipes = scoredRecipes
+              .filter((r: any) => r.preferenceScore > -100)
+              .sort((a: any, b: any) => b.preferenceScore - a.preferenceScore);
+          }
+        } catch (err) {
+          // If member fetch fails, just return unfiltered recipes
+          console.error('Error filtering recipes by preferences:', err);
+        }
       }
 
       res.json(recipes);
