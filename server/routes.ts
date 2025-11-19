@@ -533,17 +533,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
           Object.values(day).forEach((meal: any) => {
             if (meal && meal.ingredients) {
               meal.ingredients.forEach((ingredient: any) => {
-                const key = ingredient.name.toLowerCase();
-                if (mergedItems.has(key)) {
-                  const existing = mergedItems.get(key);
-                  if (ingredient.unit === existing.unit) {
-                    existing.amount = (parseFloat(existing.amount) + parseFloat(ingredient.amount)).toString();
+                // Handle both string format (old) and object format (new)
+                let parsedIngredient: { name: string; amount: string; unit: string };
+                
+                if (typeof ingredient === 'string') {
+                  // Parse old format: "150g pasta (£0.50)"
+                  const match = ingredient.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)\s+(.+?)(?:\s*\(.*\))?$/);
+                  if (match) {
+                    parsedIngredient = {
+                      name: match[3].trim(),
+                      amount: match[1],
+                      unit: match[2]
+                    };
                   } else {
-                    existing.amount += ` + ${ingredient.amount} ${ingredient.unit}`;
-                    existing.unit = '';
+                    // Fallback for unparseable strings
+                    parsedIngredient = {
+                      name: ingredient.replace(/\(.*\)/, '').trim(),
+                      amount: '1',
+                      unit: 'item'
+                    };
                   }
                 } else {
-                  mergedItems.set(key, { ...ingredient });
+                  // New format: already an object
+                  parsedIngredient = ingredient;
+                }
+                
+                const key = parsedIngredient.name.toLowerCase();
+                if (mergedItems.has(key)) {
+                  const existing = mergedItems.get(key);
+                  if (parsedIngredient.unit === existing.unit) {
+                    existing.amount = (parseFloat(existing.amount) + parseFloat(parsedIngredient.amount)).toString();
+                  } else {
+                    existing.amount += ` + ${parsedIngredient.amount} ${parsedIngredient.unit}`;
+                    existing.unit = 'mixed';
+                  }
+                } else {
+                  mergedItems.set(key, { ...parsedIngredient });
                 }
               });
             }

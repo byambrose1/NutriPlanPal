@@ -227,16 +227,55 @@ Create a balanced weekly meal plan that:
 
 For each day, provide breakfast, lunch, and dinner. Include detailed recipes with ingredients, instructions, nutrition info, and cost estimates. Also provide weekly shopping tips and batch cooking suggestions.
 
-Return as JSON with this structure:
+CRITICAL: Return as JSON with EXACTLY this structure. Each recipe MUST follow this exact format:
+
 {
-  "monday": { "breakfast": recipe_object, "lunch": recipe_object, "dinner": recipe_object },
-  "tuesday": { "breakfast": recipe_object, "lunch": recipe_object, "dinner": recipe_object },
-  ... (continue for all days)
-  "totalWeeklyCost": number,
-  "totalWeeklyCalories": number,
-  "batchCookingTips": ["tip1", "tip2", ...],
-  "shoppingTips": ["tip1", "tip2", ...]
-}`;
+  "monday": {
+    "breakfast": {
+      "title": "Recipe Name Here",
+      "description": "Brief description",
+      "instructions": ["Step 1 text", "Step 2 text", "Step 3 text"],
+      "ingredients": [
+        {"name": "ingredient name", "amount": "150", "unit": "g"},
+        {"name": "another ingredient", "amount": "2", "unit": "tbsp"}
+      ],
+      "prepTime": 10,
+      "cookTime": 20,
+      "servings": 4,
+      "difficulty": "easy",
+      "cuisineType": "mediterranean",
+      "dietaryTags": ["vegetarian"],
+      "nutrition": {
+        "calories": 450,
+        "protein": 20,
+        "carbs": 60,
+        "fat": 15,
+        "fiber": 8,
+        "sugar": 5,
+        "sodium": 300
+      },
+      "estimatedCost": 3.50,
+      "isBatchCookable": false,
+      "isFreezerFriendly": false,
+      "isKidFriendly": true,
+      "tips": ["Helpful tip 1", "Helpful tip 2"]
+    },
+    "lunch": { same format as breakfast },
+    "dinner": { same format as breakfast }
+  },
+  "tuesday": { same format as monday },
+  "wednesday": { same format as monday },
+  "thursday": { same format as monday },
+  "friday": { same format as monday },
+  "saturday": { same format as monday },
+  "sunday": { same format as monday },
+  "totalWeeklyCost": total_number_for_all_meals,
+  "totalWeeklyCalories": total_number_for_all_meals,
+  "batchCookingTips": ["tip1", "tip2"],
+  "shoppingTips": ["tip1", "tip2"]
+}
+
+IMPORTANT: Ingredients MUST be objects with "name", "amount", and "unit" fields - NOT strings!`;
 
   try {
     const openai = getOpenAIClient();
