@@ -50,26 +50,26 @@ export default function NutritionReports() {
   };
 
   // Prepare macros data for pie chart
-  const macrosData = report ? [
-    { name: "Protein", value: report.averages.protein, color: COLORS.protein },
-    { name: "Carbs", value: report.averages.carbs, color: COLORS.carbs },
-    { name: "Fat", value: report.averages.fat, color: COLORS.fat }
+  const macrosData = report?.averages ? [
+    { name: "Protein", value: report.averages.protein || 0, color: COLORS.protein },
+    { name: "Carbs", value: report.averages.carbs || 0, color: COLORS.carbs },
+    { name: "Fat", value: report.averages.fat || 0, color: COLORS.fat }
   ] : [];
 
   // Prepare daily breakdown for line chart
   const dailyData = report?.dailyBreakdown?.map((day: any, index: number) => ({
     day: `Day ${index + 1}`,
-    calories: day.calories,
-    protein: day.protein,
-    carbs: day.carbs,
-    fat: day.fat
+    calories: day.calories || 0,
+    protein: day.protein || 0,
+    carbs: day.carbs || 0,
+    fat: day.fat || 0
   })) || [];
 
   // Micronutrients data
-  const microData = report ? [
-    { name: "Fiber", value: report.averages.fiber, color: COLORS.fiber },
-    { name: "Sugar", value: report.averages.sugar, color: COLORS.sugar },
-    { name: "Sodium", value: Math.round(report.averages.sodium / 100), color: COLORS.sodium } // Scale for visibility
+  const microData = report?.averages ? [
+    { name: "Fiber", value: report.averages.fiber || 0, color: COLORS.fiber },
+    { name: "Sugar", value: report.averages.sugar || 0, color: COLORS.sugar },
+    { name: "Sodium", value: Math.round((report.averages.sodium || 0) / 100), color: COLORS.sodium }
   ] : [];
 
   return (
@@ -120,7 +120,7 @@ export default function NutritionReports() {
             <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading nutrition data...</p>
           </div>
-        ) : !report || report.daysTracked === 0 ? (
+        ) : !report || !report.averages || report.daysTracked === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <Calendar className="w-16 h-16 mx-auto text-muted-foreground mb-4" />

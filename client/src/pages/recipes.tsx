@@ -193,12 +193,12 @@ export default function Recipes() {
             <DialogTrigger asChild>
               <Button className="mt-4 md:mt-0" data-testid="button-generate-recipe">
                 <Sparkles className="mr-2 h-4 w-4" />
-                Generate AI Recipe
+                Generate Recipe
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Generate AI Recipe</DialogTitle>
+                <DialogTitle>Generate New Recipe</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <p className="text-muted-foreground">
@@ -437,7 +437,7 @@ export default function Recipes() {
               <p className="text-muted-foreground mb-4">
                 {searchQuery || selectedTags.length > 0 || difficultyFilter || timeFilter
                   ? "Try adjusting your search or filters to find more recipes."
-                  : "Get started by generating your first AI-powered recipe!"}
+                  : "Get started by generating your first personalised recipe!"}
               </p>
               <Button onClick={() => setIsGenerateDialogOpen(true)} data-testid="button-get-started">
                 <Plus className="mr-2 h-4 w-4" />

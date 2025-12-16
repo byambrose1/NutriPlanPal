@@ -13,6 +13,13 @@ import { ShoppingCart, MapPin, DollarSign, Clock, Route, TrendingDown, Store, Za
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 
+interface StoreInfo {
+  name: string;
+  distance: string;
+  priceRating: string;
+  estimatedTime: string;
+}
+
 export default function Shopping() {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [priceComparisonQuery, setPriceComparisonQuery] = useState("");
@@ -127,7 +134,7 @@ export default function Shopping() {
         { name: "Aldi", distance: "1.5 mi", priceRating: "budget", estimatedTime: "18 min" }
       ];
   
-  const stores = preferredStores.length > 0 
+  const stores: StoreInfo[] = preferredStores.length > 0 
     ? preferredStores.map((name: string, index: number) => ({
         name,
         distance: `${(1.5 + index * 0.5).toFixed(1)} ${household?.currency === "GBP" ? "km" : "mi"}`,

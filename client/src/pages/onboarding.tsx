@@ -1121,15 +1121,44 @@ export default function Onboarding() {
                 </div>
 
                 <div className="bg-muted/50 rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">Summary</h4>
-                  <div className="space-y-1 text-sm text-muted-foreground">
-                    <p>Family size: {watchedValues.familySize} people</p>
-                    <p>Weekly budget: ${watchedValues.weeklyBudget}</p>
-                    <p>Cooking level: {watchedValues.cookingSkillLevel}</p>
-                    <p>Dietary restrictions: {watchedValues.dietaryRestrictions.length} selected</p>
-                    <p>Allergies: {watchedValues.allergies.length} selected</p>
-                    <p>Health goals: {watchedValues.goals.length} selected</p>
+                  <h4 className="font-semibold mb-2">Review Your Preferences</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Name:</span>
+                      <span className="font-medium">{watchedValues.name || "Not set"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Family size:</span>
+                      <span className="font-medium">{watchedValues.familySize} people</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Weekly budget:</span>
+                      <span className="font-medium">{watchedValues.currency === 'GBP' ? '£' : '$'}{watchedValues.weeklyBudget}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Cooking level:</span>
+                      <span className="font-medium capitalize">{watchedValues.cookingSkillLevel}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Dietary restrictions:</span>
+                      <span className="font-medium">{watchedValues.dietaryRestrictions.length} selected</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Allergies:</span>
+                      <span className="font-medium">{watchedValues.allergies.length} selected</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Health goals:</span>
+                      <span className="font-medium">{watchedValues.goals.length} selected</span>
+                    </div>
                   </div>
+                </div>
+                
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    <Check className="inline w-4 h-4 mr-1" />
+                    Ready to go! Click <strong>Finish & Continue</strong> below to save your preferences and start planning meals.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -1153,13 +1182,19 @@ export default function Onboarding() {
                 type="submit"
                 disabled={createHouseholdMutation.isPending || createMemberMutation.isPending}
                 data-testid="button-complete-onboarding"
-                onClick={(e) => {
-                  console.log('Complete Setup button clicked');
-                  console.log('Form errors:', errors);
-                  // Let the form handle the submit
-                }}
+                className="bg-green-600 hover:bg-green-700"
               >
-                {(createHouseholdMutation.isPending || createMemberMutation.isPending) ? "Creating Profile..." : "Complete Setup"}
+                {(createHouseholdMutation.isPending || createMemberMutation.isPending) ? (
+                  <div className="flex items-center">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Creating Profile...
+                  </div>
+                ) : (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Finish & Continue
+                  </>
+                )}
               </Button>
             ) : (
               <Button

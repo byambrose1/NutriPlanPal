@@ -1,0 +1,314 @@
+You are working on my NutriPlanPal web app. I need you to fix multiple functional issues and improve the dashboard experience so it’s clear, user-friendly, and coherent.
+
+Non-negotiables
+
+Do not introduce new bugs.
+
+Keep changes minimal but effective: fix logic first, then UI polish.
+
+No “AI” wording in the UI (users shouldn’t see “AI recipes” etc).
+
+Use GBP (£) not USD ($).
+
+If you change any data structure, update all dependent code.
+
+Add clear loading states, error handling, and empty states.
+
+1) Questionnaire flow bug (auto-navigates to dashboard)
+Problem
+
+When I reach the final questionnaire page, the app auto-clicks / auto-navigates to the dashboard. I need the user to have a choice (e.g., review answers, submit button, confirmation screen).
+
+Requirements
+
+Remove any auto-redirect or auto-triggered navigation.
+
+Final step must present a clear CTA, e.g. “Finish & Continue”.
+
+Only navigate after explicit user action.
+
+Add a brief confirmation screen/section if needed.
+
+Acceptance criteria
+
+Reaching final questionnaire page does not redirect.
+
+Navigation only happens after clicking the CTA.
+
+2) Loading indicator for “Generate Meal Plan” (middle button)
+Problem
+
+The main “Generate Meal Plan” button (middle) doesn’t show loading. It looks like nothing happens unless I notice another loading state elsewhere.
+
+Requirements
+
+Add a loading spinner + disabled state on the same button the user clicks.
+
+Button text changes while loading (e.g. “Generating…”).
+
+Prevent double-clicks while loading.
+
+If the request fails, show a clear error toast/alert.
+
+Acceptance criteria
+
+Clicking that button instantly shows loading feedback on the same button.
+
+User cannot spam the button while a request is in progress.
+
+3) Recommended Recipes are irrelevant / nonsense
+Problem
+
+Recommended Recipes show rubbish (e.g. savoury smoothies, weird desserts) that do not match the user’s preferences/goals.
+
+Requirements
+
+Update recipe recommendation logic to respect:
+
+Questionnaire preferences (diet type, dislikes, goals, time constraints)
+
+Meal type context (breakfast/lunch/dinner/snack)
+
+Basic sanity filters (no savoury smoothie unless explicitly chosen; no “dessert meal” unless user wants desserts)
+
+Add guardrails:
+
+Filter out recipes that violate preferences/allergens/dislikes.
+
+Ensure titles and ingredients make sense (basic validation).
+
+Add a fallback:
+
+If you can’t find valid recommendations, show “No good matches – adjust preferences” and suggest what to change.
+
+Acceptance criteria
+
+Recommended recipes are consistent with the questionnaire.
+
+Obviously nonsense outputs are filtered out.
+
+4) Meal plan ordering is wrong (not ascending by day / meal type)
+Problem
+
+Meal plan appears in random order.
+
+Requirements
+
+Sort meal plan in a consistent structure:
+
+Day order: Mon → Sun (or Day 1 → Day 7)
+
+Within each day: Breakfast → Lunch → Dinner → Snacks (or whatever meal types exist)
+
+Ensure the underlying data is sorted OR the UI layer sorts before render.
+
+Acceptance criteria
+
+Meal plan always displays in correct day + meal order.
+
+5) Shopping list is not a proper shopping list + needs categories + download
+Problem
+
+Shopping list currently shows “ingredients” rather than a usable shopping list. It should be grouped and downloadable.
+
+Requirements
+
+Convert plan ingredients into a consolidated shopping list:
+
+Combine duplicates (e.g. “onion” appears once with quantity summed if possible)
+
+Normalise naming (e.g. “red onion” vs “onion” rules – choose a consistent approach)
+
+Categorise items into sections like:
+
+Produce, Meat/Fish, Dairy, Pantry, Frozen, Spices/Herbs, Bakery, Other
+
+Add “Download shopping list”:
+
+Provide PDF download OR CSV download (ideally both)
+
+Include categories in the download
+
+Add checkboxes for usability (optional but ideal).
+
+Acceptance criteria
+
+Shopping list is consolidated, categorised, and downloadable.
+
+6) Recipes section is hard to find
+Problem
+
+There is no clear sign/button for where recipes are. Currently it’s buried under Settings, which is confusing.
+
+Requirements
+
+Add clear navigation to Recipes from the Dashboard (top nav or dashboard cards).
+
+Settings should be for account/app settings only, not core features.
+
+Acceptance criteria
+
+User can find Recipes immediately from dashboard/navigation without guessing.
+
+7) Move core sections out of Settings into Dashboard navigation
+Problem
+
+Recipes, Nutrition report, and Shopping List are currently living inside Settings, which is wrong.
+
+Requirements
+
+Restructure navigation:
+
+Dashboard should have clear links/tabs/cards for:
+
+Meal Plan
+
+Recipes
+
+Shopping List
+
+Nutrition Report
+
+Settings should contain only settings-related items.
+
+Acceptance criteria
+
+Core features are accessible via dashboard/nav, not Settings.
+
+8) Nutrition report + Shopping List errors inside Settings
+Problem
+
+Nutrition report shows an error and Shopping List has issues (likely due to routing/state/data dependency).
+
+Requirements
+
+Identify why errors occur (console + network logs).
+
+Fix root cause: routing, missing state, API response shape, null handling, permissions, etc.
+
+Add error boundaries/empty states so it never shows a blank crash.
+
+Acceptance criteria
+
+Nutrition report and Shopping List load reliably from their new dashboard navigation.
+
+9) Recipe quality + layout improvements + currency (£) + cost clarity
+Problems
+
+Recipes are low quality.
+
+Layout is plain/not user friendly.
+
+App uses $ instead of £.
+
+Cost is unclear: what is it based on?
+
+Requirements
+
+Currency + cost
+
+Change all currency display to £.
+
+If you are showing “cost”, define what it means:
+
+Is it an estimate based on ingredient prices?
+
+If you don’t have real pricing data, label it clearly as “Estimated cost” and explain basis.
+
+If cost is not reliable, remove it until it’s accurate.
+
+Recipe output quality
+
+Improve recipe generation templates/constraints to produce realistic recipes:
+
+Real ingredients, real steps, sensible titles
+
+Cooking times/servings included
+
+Add validation (minimum viable quality checks):
+
+Must include ingredients + steps
+
+Must match meal type
+
+Must not violate dietary constraints
+
+UI
+
+Improve readability:
+
+Better spacing, headings, cards, and consistent typography
+
+Clear primary CTA buttons
+
+Keep it clean and modern, not cluttered.
+
+Acceptance criteria
+
+Currency is £ everywhere.
+
+Cost is either clearly explained and reasonable, or removed.
+
+Recipes are noticeably more realistic and better presented.
+
+UI feels clearer and easier to use.
+
+10) Remove “Generate AI recipes” wording + generate recipes based on updated meal plan
+Problem
+
+It says “Generate AI recipes” and recipes are not clearly tied to the current meal plan.
+
+Requirements
+
+Rename button/labels to:
+
+“Generate recipes” / “Refresh recipes”
+
+Recipes should be generated from the current meal plan:
+
+If meal plan changes, recipes update accordingly.
+
+Provide “Regenerate recipes from this plan” action.
+
+Acceptance criteria
+
+No UI mentions “AI recipes”.
+
+Recipe generation is linked to the meal plan state.
+
+11) Make meal plan interactive: click day/meal to view recipes (and optional day view)
+Requirement
+
+Users should be able to click the meal plan (day + meal) to view:
+
+the recipe details for that slot
+
+optionally show an “ingredients for this day” view (shopping list is weekly, so day view is optional)
+
+Acceptance criteria
+
+Clicking a meal plan entry opens the related recipe (modal or dedicated page).
+
+The relationship between plan entry ↔ recipe is consistent and reliable.
+
+Deliverables
+
+Fix all issues above.
+
+Provide a brief summary of changes + files edited.
+
+Add basic tests or at least structured manual test steps.
+
+Ensure no console errors on core flows.
+
+Debugging steps you must do
+
+Reproduce each issue first.
+
+Check console + network logs for errors.
+
+Add instrumentation/logging temporarily if needed.
+
+Fix root cause, not symptoms.
+
+If any requirement conflicts with the current architecture, propose the cleanest approach and implement it.

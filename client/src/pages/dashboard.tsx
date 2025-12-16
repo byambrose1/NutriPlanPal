@@ -11,8 +11,9 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Users, Sparkles, ShoppingCart, Plus, LogOut, Settings,
-  DollarSign, Clock, Heart, ChefHat
+  Clock, Heart, ChefHat, BookOpen, Activity, UtensilsCrossed, Download
 } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -171,6 +172,46 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        {/* Quick Navigation Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Link href="/recipes">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-orange-300">
+              <CardContent className="p-4 text-center">
+                <BookOpen className="w-8 h-8 mx-auto mb-2 text-orange-500" />
+                <h3 className="font-semibold">Recipes</h3>
+                <p className="text-xs text-muted-foreground">Browse & discover</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/shopping">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-green-300">
+              <CardContent className="p-4 text-center">
+                <ShoppingCart className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                <h3 className="font-semibold">Shopping List</h3>
+                <p className="text-xs text-muted-foreground">Your groceries</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/nutrition">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-300">
+              <CardContent className="p-4 text-center">
+                <Activity className="w-8 h-8 mx-auto mb-2 text-blue-500" />
+                <h3 className="font-semibold">Nutrition</h3>
+                <p className="text-xs text-muted-foreground">Track progress</p>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/pantry">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-purple-300">
+              <CardContent className="p-4 text-center">
+                <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 text-purple-500" />
+                <h3 className="font-semibold">Pantry</h3>
+                <p className="text-xs text-muted-foreground">Your ingredients</p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
         {/* Welcome Section with Profile Switcher */}
         <Card className="bg-gradient-to-r from-orange-500 to-yellow-500 text-white border-0 shadow-xl">
           <CardContent className="p-6">
@@ -185,7 +226,7 @@ export default function Dashboard() {
                 
                 {/* Profile Switcher */}
                 {members.length > 0 && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <span className="text-sm font-medium">Viewing plan for:</span>
                     <Select 
                       value={currentMember?.id || members[0]?.id} 
@@ -223,10 +264,10 @@ export default function Dashboard() {
                   data-testid="button-generate-meal-plan"
                 >
                   {generateMealPlanMutation.isPending ? (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin mr-2"></div>
                       Generating...
-                    </>
+                    </div>
                   ) : (
                     <>
                       <Sparkles className="mr-2 h-4 w-4" />
@@ -241,8 +282,17 @@ export default function Dashboard() {
                   disabled={generateShoppingListMutation.isPending}
                   data-testid="button-generate-shopping"
                 >
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  Create Shopping List
+                  {generateShoppingListMutation.isPending ? (
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Creating...
+                    </div>
+                  ) : (
+                    <>
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Create Shopping List
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
@@ -336,25 +386,57 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                {/* Display meals */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries((activeMealPlan.meals as any) || {}).map(([day, meals]: [string, any]) => (
-                    <Card key={day} className="border-2">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base capitalize">{day}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        {Object.entries(meals || {}).map(([mealType, meal]: [string, any]) => (
-                          <div key={mealType} className="p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 capitalize">
-                              {mealType}
-                            </p>
-                            <p className="text-sm font-medium">{meal?.title || "Not planned"}</p>
-                          </div>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  ))}
+                {/* Display meals - ordered Mon-Sun */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => {
+                    const meals = (activeMealPlan.meals as any)?.[day];
+                    if (!meals) return null;
+                    
+                    const dayDisplayNames: Record<string, string> = {
+                      monday: 'Monday',
+                      tuesday: 'Tuesday', 
+                      wednesday: 'Wednesday',
+                      thursday: 'Thursday',
+                      friday: 'Friday',
+                      saturday: 'Saturday',
+                      sunday: 'Sunday'
+                    };
+                    
+                    const mealTypeOrder = ['breakfast', 'lunch', 'dinner', 'snacks'];
+                    
+                    return (
+                      <Card key={day} className="border-2 hover:shadow-md transition-shadow">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-gray-800 dark:to-gray-700">
+                          <CardTitle className="text-base">{dayDisplayNames[day]}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2 pt-3">
+                          {mealTypeOrder.map((mealType) => {
+                            const meal = meals[mealType];
+                            if (!meal) return null;
+                            
+                            return (
+                              <div 
+                                key={mealType} 
+                                className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                                data-testid={`meal-${day}-${mealType}`}
+                              >
+                                <p className="text-xs font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wide mb-1">
+                                  {mealType}
+                                </p>
+                                <p className="text-sm font-medium leading-tight">{meal?.title || "Not planned"}</p>
+                                {meal?.prepTime && meal?.cookTime && (
+                                  <p className="text-xs text-muted-foreground mt-1 flex items-center">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {meal.prepTime + meal.cookTime} min
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             ) : (

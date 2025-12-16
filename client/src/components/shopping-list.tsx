@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Minus, Edit3, Trash2, Store, MapPin, DollarSign } from "lucide-react";
+import { Plus, Minus, Edit3, Trash2, Store, MapPin, DollarSign, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface ShoppingItem {
   name: string;
@@ -67,9 +68,9 @@ export function ShoppingList({ shoppingList, onItemsSelected, currency = 'GBP' }
     return groups;
   }, {});
 
-  const categoryOrder = ["Meat & Seafood", "Dairy", "Fruits", "Vegetables", "Pantry & Grains", "Other"];
-  const sortedCategories = categoryOrder.filter(cat => groups[cat]).concat(
-    Object.keys(groups).filter(cat => !categoryOrder.includes(cat))
+  const categoryOrder = ["Produce", "Meat & Seafood", "Dairy", "Fruits", "Vegetables", "Pantry & Grains", "Bakery", "Frozen", "Spices & Herbs", "Other"];
+  const sortedCategories = categoryOrder.filter(cat => groupedItems[cat]).concat(
+    Object.keys(groupedItems).filter(cat => !categoryOrder.includes(cat))
   );
 
   const completedItemsCount = items.filter(item => completedItems.has(item.name)).length;
@@ -80,9 +81,70 @@ export function ShoppingList({ shoppingList, onItemsSelected, currency = 'GBP' }
 
   const handleAddItem = () => {
     if (newItem.name.trim()) {
-      // In a real app, this would call an API to add the item
       setNewItem({ name: "", amount: "", unit: "", category: "Other" });
       setIsAddDialogOpen(false);
+    }
+  };
+
+  const downloadAsCSV = () => {
+    const headers = ["Item", "Amount", "Unit", "Category", "Estimated Price"];
+    const rows = items.map(item => [
+      item.name,
+      item.amount,
+      item.unit,
+      item.category || "Other",
+      item.estimatedPrice ? `${currencySymbol}${item.estimatedPrice.toFixed(2)}` : ""
+    ]);
+    
+    const csvContent = [headers.join(","), ...rows.map(row => row.map(cell => `"${cell}"`).join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `shopping-list-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  const downloadAsPDF = () => {
+    const printContent = `
+      <html>
+        <head>
+          <title>Shopping List</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { color: #f97316; }
+            .category { margin-top: 20px; }
+            .category-title { font-weight: bold; font-size: 16px; border-bottom: 2px solid #f97316; padding-bottom: 5px; margin-bottom: 10px; }
+            .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+            .item-name { font-weight: 500; }
+            .item-details { color: #666; }
+            .total { margin-top: 30px; padding-top: 15px; border-top: 2px solid #333; font-size: 18px; font-weight: bold; }
+            .checkbox { width: 15px; height: 15px; border: 1px solid #333; display: inline-block; margin-right: 10px; }
+          </style>
+        </head>
+        <body>
+          <h1>Shopping List</h1>
+          <p>Generated: ${new Date().toLocaleDateString()}</p>
+          ${Object.entries(groupedItems).map(([category, categoryItems]) => `
+            <div class="category">
+              <div class="category-title">${category} (${(categoryItems as ShoppingItem[]).length} items)</div>
+              ${(categoryItems as ShoppingItem[]).map(item => `
+                <div class="item">
+                  <div><span class="checkbox"></span><span class="item-name">${item.name}</span></div>
+                  <div class="item-details">${item.amount} ${item.unit}${item.estimatedPrice ? ` - ${currencySymbol}${item.estimatedPrice.toFixed(2)}` : ''}</div>
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}
+          <div class="total">Estimated Total: ${currencySymbol}${totalCost.toFixed(2)}</div>
+        </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.print();
     }
   };
 
@@ -181,6 +243,25 @@ export function ShoppingList({ shoppingList, onItemsSelected, currency = 'GBP' }
           Clear Selection
         </Button>
         
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline" data-testid="button-download-list">
+              <Download className="mr-2 h-3 w-3" />
+              Download
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={downloadAsCSV} data-testid="download-csv">
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Download as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={downloadAsPDF} data-testid="download-pdf">
+              <FileText className="mr-2 h-4 w-4" />
+              Print / Save as PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
         {selectedItems.size > 0 && (
           <Badge variant="secondary" className="px-3 py-1">
             {selectedItems.size} selected
@@ -197,12 +278,12 @@ export function ShoppingList({ shoppingList, onItemsSelected, currency = 'GBP' }
                 {category}
               </h3>
               <Badge variant="outline" className="text-xs">
-                {groups[category].length} items
+                {groupedItems[category].length} items
               </Badge>
             </div>
             
             <div className="space-y-2">
-              {groups[category].map((item, index) => {
+              {groupedItems[category].map((item, index) => {
                 const itemKey = `${category}-${index}`;
                 const isCompleted = completedItems.has(item.name);
                 const isSelected = selectedItems.has(item.name);
@@ -243,7 +324,7 @@ export function ShoppingList({ shoppingList, onItemsSelected, currency = 'GBP' }
                       {item.estimatedPrice && (
                         <div className="text-right">
                           <div className={`font-medium ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
-                            ${item.estimatedPrice.toFixed(2)}
+                            {currencySymbol}{item.estimatedPrice.toFixed(2)}
                           </div>
                           {item.bestStore && (
                             <div className="flex items-center text-xs text-secondary">
@@ -295,21 +376,21 @@ export function ShoppingList({ shoppingList, onItemsSelected, currency = 'GBP' }
           <div>
             <div className="text-muted-foreground">Spent</div>
             <div className="font-medium" data-testid="summary-spent">
-              ${completedCost.toFixed(2)}
+              {currencySymbol}{completedCost.toFixed(2)}
             </div>
           </div>
           
           <div>
             <div className="text-muted-foreground">Remaining</div>
             <div className="font-medium" data-testid="summary-remaining">
-              ${(totalCost - completedCost).toFixed(2)}
+              {currencySymbol}{(totalCost - completedCost).toFixed(2)}
             </div>
           </div>
           
           <div>
-            <div className="text-muted-foreground">Total Budget</div>
+            <div className="text-muted-foreground">Estimated Total</div>
             <div className="font-medium" data-testid="summary-total">
-              ${shoppingList.totalEstimatedCost}
+              {currencySymbol}{shoppingList.totalEstimatedCost}
             </div>
           </div>
         </div>
