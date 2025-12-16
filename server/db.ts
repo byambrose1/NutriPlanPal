@@ -1,10 +1,26 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
 import * as schema from "@shared/schema";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set");
+const { Pool } = pg;
+
+// Use individual PG environment variables for more reliable connection
+const connectionConfig = {
+  host: process.env.PGHOST,
+  port: parseInt(process.env.PGPORT || '5432'),
+  user: process.env.PGUSER,
+  password: process.env.PGPASSWORD,
+  database: process.env.PGDATABASE,
+  ssl: process.env.PGHOST?.includes('neon') || process.env.PGHOST?.includes('supabase') 
+    ? { rejectUnauthorized: false } 
+    : undefined,
+};
+
+if (!connectionConfig.host || !connectionConfig.database) {
+  throw new Error(
+    "Database connection not configured. Please provision a database.",
+  );
 }
 
-const sql = neon(process.env.DATABASE_URL);
-export const db = drizzle(sql, { schema });
+export const pool = new Pool(connectionConfig);
+export const db = drizzle(pool, { schema });
